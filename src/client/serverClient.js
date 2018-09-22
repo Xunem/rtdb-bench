@@ -17,6 +17,7 @@ export class ServerClient {
     controls.getServerId().subscribe((value) => {
       if (value) {
         this.serverid = value;
+        this.setDetails();
         if (this.initial) {
           this.Dbinterface = new Dbinterface(PROV_BAQEND, QUERY_SERVER, {
             serverid: this.serverid,
@@ -54,7 +55,6 @@ export class ServerClient {
     let width = this.anctx.canvas.width;
     let height = this.anctx.canvas.height;
     let spacing = Math.floor((width-20)/(this.limit-1));
-    console.log(spacing);
     dataArray.sort(function(a, b) {
       return b.ts - a.ts;
     });
@@ -140,5 +140,13 @@ export class ServerClient {
     this.serverData.delete(mid);
     console.log(this.serverData);
     this.redraw();
+  }
+
+  /**
+   *
+   */
+  setDetails() {
+    document.getElementById('server_details').innerHTML =
+      'Server '+ this.serverid;
   }
 }

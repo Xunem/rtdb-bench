@@ -6,6 +6,7 @@ import {RoomClient} from './src/client/roomClient.js';
 import {ServerClient} from './src/client/serverClient.js';
 import {Controls} from './src/controls/controls.js';
 
+let room = 1;
 initConnections.then((client) => {
   const controls = new Controls();
   const producer = new Producer(3);
@@ -25,4 +26,11 @@ initConnections.then((client) => {
     producer.stop();
   });
   document.getElementById('hottest').checked = true;
+  let roomSelect = document.getElementById('room');
+  roomSelect.addEventListener('change', () => {
+    if (roomSelect.value != room) {
+      room = roomSelect.value;
+      controls.getRoomNumber().next(room);
+    }
+  });
 });

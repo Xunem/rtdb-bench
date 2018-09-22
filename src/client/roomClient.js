@@ -5,29 +5,47 @@ import {Dbinterface, PROV_BAQEND, QUERY_SERVERROOM}
 export class RoomClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
-   * @param {String} room - Room which should be displayed
    */
-  constructor(controls, room) {
+  constructor(controls) {
     this.controls = controls;
-    this.room = room;
-    this.racks = 4;
-    this.units = 5;
+    this.racks = 5;
+    this.units = 10;
     this.hover = '';
     this.serverData = new Map();
-    this.Dbinterface = new Dbinterface(PROV_BAQEND, QUERY_SERVERROOM, {
-      room: this.room,
+    this.serverDisplay = new Map();
+    this.initial = true;
+    this.room = '';
+    controls.getRoomNumber().subscribe((value) => {
+      this.room = value;
+      this.setDetails();
+      if (this.initial) {
+        this.Dbinterface = new Dbinterface(PROV_BAQEND, QUERY_SERVERROOM, {
+          room: parseInt(value),
+        });
+        this.subscription = this.Dbinterface.doQuery().subscribe(
+            (x) => this.handleEvent(x),
+            (e) => console.log('onError: %s', JSON.stringify(e)),
+            () => console.log('onCompleted'));
+        this.initial = false;
+      } else {
+        this.subscription.unsubscribe();
+        this.serverData = new Map();
+        console.log(value);
+        this.subscription = this.Dbinterface.updateQuery({
+          room: parseInt(value),
+        }).subscribe(
+            (x) => this.handleEvent(x),
+            (e) => console.log('onError: %s', JSON.stringify(e)),
+            () => console.log('onCompleted'));
+      }
     });
   };
   /** */
   init() {
-    console.log('init');
-    this.anctx = document.getElementById('rm_ba_cvs').getContext('2d');
-    this.subscription = this.Dbinterface.doQuery().subscribe(
-        (x) => this.handleEvent(x),
-        (e) => console.log('onError: %s', JSON.stringify(e)),
-        () => console.log('onCompleted'));
-    this.redraw();
     let cvs = document.getElementById('rm_ba_cvs');
+    this.anctx = cvs.getContext('2d');
+    this.toolTip = document.getElementById('ToolTip');
+    this.redraw();
     cvs.addEventListener('mousemove', (e) => {
       let r = cvs.getBoundingClientRect();
       let width = this.anctx.canvas.width;
@@ -68,8 +86,16 @@ export class RoomClient {
         let unit = Math.floor((y-upperEndY)/spacingHeight);
         this.hover = 'r'+this.room+'r'+rack+'u'+unit;
         cvs.style.cursor = 'pointer';
+        let serverInfo = this.serverDisplay.get(this.hover);
+        this.toolTip.style.top = (e.pageY-10)+'px';
+        this.toolTip.style.left = (e.pageX+20)+'px';
+        this.toolTip.innerHTML = this.hover +'<br>'
+            +'Temp: '+ Math.floor(serverInfo.temp) +'°C<br>'
+            +'CPU: '+ Math.floor(serverInfo.cpu) +'%';
+        this.toolTip.style.display = 'block';
       } else {
         this.hover = '';
+        this.toolTip.style.display = 'none';
         cvs.style.cursor = 'auto';
       }
       this.redraw();
@@ -78,6 +104,12 @@ export class RoomClient {
       if (this.hover) {
         this.controls.getServerId().next(this.hover);
       }
+    });
+    cvs.addEventListener('mouseout', () => {
+      this.hover = '';
+      this.toolTip.style.display = 'none';
+      cvs.style.cursor = 'auto';
+      this.redraw();
     });
   }
   /** */
@@ -88,8 +120,8 @@ export class RoomClient {
     let height = this.anctx.canvas.height;
     let spacingHeight = Math.floor((height-60)/this.units);
     let spacingWidth = Math.floor((width-20)/this.racks);
-    for (let i = 0; i<4; i++) {
-      for (let j = 0; j<5; j++) {
+    for (let i = 0; i<this.racks; i++) {
+      for (let j = 0; j<this.units; j++) {
         this.anctx.beginPath();
         this.anctx.moveTo(
             10 + Math.floor(spacingWidth)*i,
@@ -140,13 +172,59 @@ export class RoomClient {
       };
       this.anctx.beginPath();
       this.anctx.strokeStyle = 'BLACK';
+      let x = 10 + Math.floor(spacingWidth)*dataArray[i].rack
+      + Math.floor(spacingWidth*0.1);
+      let y = 30 + spacingHeight*dataArray[i].unit
+      + Math.floor(spacingHeight*0.2);
+      let rectWidth = Math.floor(spacingWidth*0.8);
+      let rectHeight = spacingHeight;
+      this.anctx.rect(x, y, rectWidth, rectHeight);
+      this.anctx.fill();
+      this.anctx.stroke();
+      this.anctx.beginPath();
       this.anctx.rect(
-          10 + Math.floor(spacingWidth)*dataArray[i].rack
-            + Math.floor(spacingWidth*0.1),
-          30 + spacingHeight*dataArray[i].unit
-            + Math.floor(spacingHeight*0.2),
-          Math.floor(spacingWidth*0.8),
-          spacingHeight);
+          x + Math.floor(rectWidth*0.25),
+          y + Math.floor(rectHeight*0.25),
+          Math.floor(rectWidth*0.25),
+          Math.floor(rectHeight*0.5)
+      );
+      let range = 90-25;
+      let current = dataArray[i].temp - 25;
+      if (current > range/2) {
+        current = current - range/2;
+        let perc = current/(range/2);
+        let green = 255 - Math.floor(255*perc);
+        let color = 'rgb(255,'+green+',0)';
+        this.anctx.fillStyle = color;
+      } else {
+        let perc = current/(range/2);
+        let red = Math.floor(255*perc);
+        let color = 'rgb('+red+',255,0)';
+        this.anctx.fillStyle = color;
+      }
+      this.anctx.fill();
+      this.anctx.stroke();
+      this.anctx.beginPath();
+      this.anctx.rect(
+          x + Math.floor(rectWidth*0.5),
+          y + Math.floor(rectHeight*0.25),
+          Math.floor(rectWidth*0.25),
+          Math.floor(rectHeight*0.5)
+      );
+      range = 50;
+      current = dataArray[i].cpu - 50;
+      if (current > range/2) {
+        current = current - range/2;
+        let perc = current/(range/2);
+        let green = 255 - Math.floor(255*perc);
+        let color = 'rgb(255,'+green+',0)';
+        this.anctx.fillStyle = color;
+      } else {
+        let perc = current/(range/2);
+        let red = Math.floor(255*perc);
+        let color = 'rgb('+red+',255,0)';
+        this.anctx.fillStyle = color;
+      }
       this.anctx.fill();
       this.anctx.stroke();
     }
@@ -170,6 +248,10 @@ export class RoomClient {
    * @param {*} data new Serverdata
    */
   add(data) {
+    this.serverDisplay.set(data.sid, {
+      cpu: data.cpu,
+      temp: data.temp,
+    });
     this.serverData.set(data.mid, data);
     this.redraw();
   }
@@ -180,7 +262,12 @@ export class RoomClient {
    */
   remove(mid) {
     this.serverData.delete(mid);
-    console.log(this.serverData);
     this.redraw();
+  }
+  /**
+   *
+   */
+  setDetails() {
+    document.getElementById('room_details').innerHTML = 'Room '+ this.room;
   }
 }
