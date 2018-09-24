@@ -18,6 +18,8 @@ export class RoomClient {
     this.serverDisplay = new Map();
     this.initial = true;
     this.room = '';
+    this.sql = 'SELECT * FROM ServerData WHERE Room='
+      +this.room+' ORDER_BY Timestamp DESC LIMIT 20';
     controls.getRoomNumber().subscribe((value) => {
       this.room = value;
       this.setDetails();

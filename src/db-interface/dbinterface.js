@@ -72,8 +72,7 @@ class FirebaseClient {
   /** */
   setQuery() {
     switch (this.queryType) {
-      case QUERY_ALL: this.query = DB.ServerData.find()
-          .descending('ts');
+      case QUERY_ALL:
         break;
       case QUERY_MINX: this.query = DB.SensorData.find();
         break;
@@ -99,7 +98,35 @@ class FirebaseClient {
    * @return {Observable} Subscription
    */
   doQuery() {
-    if (this.queryType == QUERY_SERVERROOM) {
+    if (this.queryType == QUERY_ALL) {
+      let allRooms = firebase.database().ref('serverData/');
+      allRooms.on('child_added', (roomdata) => {
+        console.log('serverData/'+roomdata.key);
+        let allServers = firebase.database().ref('serverData/'
+            +roomdata.key+'/');
+        this.query = [];
+        allServers.on('child_added', (data) => {
+          console.log('serverData/'+roomdata.key+'/'+data.key);
+          let q = firebase.database().ref('serverData/'
+              +roomdata.key+'/'+ data.key +'/')
+              .orderByChild('ts')
+              .limitToLast(1);
+          q.on('child_added', (data) => {
+            this.added.next({matchType: 'add',
+              data: data.val(),
+            });
+          });
+          q.on('child_removed', (data) => {
+            this.removed.next({matchType: 'remove',
+              data: data.val(),
+            });
+          });
+          this.query.push(q);
+        });
+      });
+      this.subscription = merge(this.added, this.removed);
+      return this.subscription;
+    } else if (this.queryType == QUERY_SERVERROOM) {
       let allServers = firebase.database().ref('serverData/'
             +this.details.room+'/');
       this.query = [];
@@ -145,7 +172,7 @@ class FirebaseClient {
   updateQuery(details) {
     this.added = new ReplaySubject(40);
     this.removed = new ReplaySubject(40);
-    if (this.queryType == QUERY_SERVERROOM) {
+    if (this.queryType == QUERY_SERVERROOM || this.queryType == QUERY_ALL) {
       for (let i = 0; i<this.query.length; i++) {
         this.query[i].off();
       }
@@ -198,7 +225,8 @@ class BaqendClient {
   setQuery() {
     switch (this.queryType) {
       case QUERY_ALL: this.query = DB.ServerData.find()
-          .descending('ts');
+          .descending('ts')
+          .limit(40);
         break;
       case QUERY_MINX: this.query = DB.SensorData.find();
         break;

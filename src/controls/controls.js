@@ -13,6 +13,7 @@ export class Controls {
   constructor() {
     this.hottestServer = new BehaviorSubject();
     this.hottestServer.next(true);
+    this.hottestServerId = new BehaviorSubject();
     this.roomNumber = new BehaviorSubject();
     this.roomNumber.next(1);
     this.serverId = new BehaviorSubject();
@@ -33,8 +34,8 @@ export class Controls {
     return this.serverId;
   }
   /**
-   * @return {BehaviorSubject} ID of Server which to be
-   * displayed in Server Detail
+   * @return {BehaviorSubject} Boolean indicating if hottest
+   * Server should be displayed
    */
   getHottestServer() {
     return this.hottestServer;
@@ -45,5 +46,12 @@ export class Controls {
    */
   getRoomNumber() {
     return this.roomNumber;
+  }
+  /**
+   * @return {BehaviorSubject} ID of Server which to be
+   * displayed in Server Detail
+   */
+  getHottestServerId() {
+    return this.hottestServerId;
   }
 }

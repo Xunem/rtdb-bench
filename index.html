@@ -9,26 +9,49 @@
 </head>
 
 <body>
+  <div id="wrapper">
     <span id="ToolTip"></span>
     <div id="Controls">
-      <button id="init">Init</button>
-      <button id="start">Start inserting</button>
-      <button id="stop">Stop inserting</button>
-      <button id="reset">Reset</button>
+      <div id="genControl">
+        <button id="init">Step</button>
+        <button id="start">Start inserting</button>
+        <button id="stop">Stop inserting</button>
+        <button id="reset">Reset</button>
+      </div>
+      <div id="ovControl" class="subControl">
+        <fieldset>
+            <legend>Audio settings</legend>
+        
+            <label for="temp">Temperature</label>
+            <input type="range" id="start" name="temp"
+                    min="25" max="65" />
+        
+            <label for="cpu">CPU</label>
+            <input type="range" id="cowbell" name="cpu" 
+                    min="0" max="100" value="0" step="2" />
+        
+        </fieldset>
+      </div>
+      <div id="rmControl" class="subControl">
+        <select id="room">
+          <option value="1">Room 1</option>
+          <option value="2">Room 2</option>
+        </select>
+      </div>
+      <div id="srvControl" class="subControl">
+        <label class="switch">
+          <input type="checkbox" id="hottest">
+          <span class="slider round"></span>
+        </label>
+        <span>Automatically show hottest Server</span>
+      </div>
+      
 
-      <select id="room">
-        <option value="1">Room 1</option>
-        <option value="2">Room 2</option>
-      </select>
-
-      <label class="switch">
-        <input type="checkbox" id="hottest">
-        <span class="slider round"></span>
-      </label>
+      
     </div>
     <div id="Clients">
       <div id="overview" class="client">
-        <span id="overview_details"></span>
+        <span id="overview_details">Overview</span>
         <div id="overview_baqend">
           <canvas id="ov_ba_cvs" width="400" height="300"></canvas>
         </div>
@@ -37,7 +60,7 @@
         </div>
       </div>
       <div id="room" class="client">
-        <span id="room_details"></span>
+        <span id="room_details">Room</span>
         <div id="room_baqend">
           <canvas id="rm_ba_cvs" width="400" height="300"></canvas>
         </div>
@@ -55,7 +78,7 @@
         </div>
       </div>
     </div>
-    
+  </div>
     <script src="https://www.gstatic.com/firebasejs/5.4.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.4.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/5.4.0/firebase-database.js"></script>

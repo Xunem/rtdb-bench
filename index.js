@@ -10,12 +10,14 @@ let room = 1;
 initConnections.then((client) => {
   const controls = new Controls();
   const producer = new Producer(3);
-  const overviewClient = new OverviewClient(controls);
+  const overviewClientBa = new OverviewClient(controls, PROV_BAQEND);
+  const overviewClientFb = new OverviewClient(controls, PROV_FIREBASE);
   const roomClientBa = new RoomClient(controls, PROV_BAQEND);
   const roomClientFb = new RoomClient(controls, PROV_FIREBASE);
   const serverClientBa = new ServerClient(controls, PROV_BAQEND, 'r2r2u0');
   const serverClientFb = new ServerClient(controls, PROV_FIREBASE, 'r2r2u0');
-  overviewClient.init();
+  overviewClientBa.init();
+  overviewClientFb.init();
   roomClientBa.init();
   roomClientFb.init();
   serverClientBa.init();
@@ -31,6 +33,10 @@ initConnections.then((client) => {
   });
   document.getElementById('reset').addEventListener('click', () => {
     producer.reset();
+  });
+  document.getElementById('hottest').addEventListener('change', () => {
+    let hotmode = document.getElementById('hottest').checked;
+    controls.getHottestServer().next(hotmode);
   });
   controls.getHottestServer().subscribe((value) => {
     document.getElementById('hottest').checked = value;
