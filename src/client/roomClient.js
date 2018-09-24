@@ -42,7 +42,10 @@ export class RoomClient {
       }
     });
   };
-  /** */
+  /**
+   * Initialising the canvas and adding capabilities
+   * for mouseover effects, tooltips and click-events on the canvas
+   */
   init() {
     let cvs;
     if (this.provider == PROV_BAQEND) {
@@ -53,6 +56,7 @@ export class RoomClient {
     this.anctx = cvs.getContext('2d');
     this.toolTip = document.getElementById('ToolTip');
     this.redraw();
+    // Adding Eventlisteners for mouseover effects and tooltip on the canvas
     cvs.addEventListener('mousemove', (e) => {
       let r = cvs.getBoundingClientRect();
       let width = this.anctx.canvas.width;
@@ -109,6 +113,7 @@ export class RoomClient {
     });
     cvs.addEventListener('click', (e) => {
       if (this.hover) {
+        this.controls.getHottestServer().next(false);
         this.controls.getServerId().next(this.hover);
       }
     });
@@ -119,7 +124,10 @@ export class RoomClient {
       this.redraw();
     });
   }
-  /** */
+  /**
+   * Redraws the server room with updated temperature and
+   * cpu visualisation
+   */
   redraw() {
     this.anctx.clearRect(0, 0,
         this.anctx.canvas.width, this.anctx.canvas.height); // Clears the canvas
@@ -264,7 +272,7 @@ export class RoomClient {
       cpu: data.cpu,
       temp: data.temp,
     });
-    this.serverData.set(data.sid, data);
+    this.serverData.set(data.mid, data);
     this.redraw();
   }
 
@@ -273,10 +281,11 @@ export class RoomClient {
    * @param {*} mid - ID of the Measurement Point which should be deleted
    */
   remove(mid) {
+    this.serverData.delete(mid);
     this.redraw();
   }
   /**
-   *
+   * Updates the Headline for the current Room
    */
   setDetails() {
     document.getElementById('room_details').innerHTML = 'Room '+ this.room;

@@ -79,12 +79,14 @@ class FirebaseClient {
         break;
       case QUERY_MINXY: this.query = DB.SensorData.find();
         break;
-      case QUERY_SERVERROOM: this.query = firebase.database()
-          .ref('serverData/'+this.details.room+'/')
-          .orderByChild('ts')
-          .limitToLast(20);
+      case QUERY_SERVERROOM:
         break;
-      case QUERY_SERVER: this.query = '';
+      case QUERY_SERVER:
+        let room = this.details.serverid.split('r')[1];
+        this.query = firebase.database()
+            .ref('serverData/'+room+'/'+this.details.serverid)
+            .orderByChild('ts')
+            .limitToLast(this.details.limit);
         break;
       case QUERY_OS: this.query = DB.SensorData.find();
         break;
@@ -97,18 +99,43 @@ class FirebaseClient {
    * @return {Observable} Subscription
    */
   doQuery() {
-    this.addQuery = this.query.on('child_added', (data) => {
-      this.added.next({matchType: 'add',
-        data: data.val(),
+    if (this.queryType == QUERY_SERVERROOM) {
+      let allServers = firebase.database().ref('serverData/'
+            +this.details.room+'/');
+      this.query = [];
+      allServers.on('child_added', (data) => {
+        let q = firebase.database().ref('serverData/'
+            +this.details.room+'/'+ data.key +'/')
+            .orderByChild('ts')
+            .limitToLast(1);
+        q.on('child_added', (data) => {
+          this.added.next({matchType: 'add',
+            data: data.val(),
+          });
+        });
+        q.on('child_removed', (data) => {
+          this.removed.next({matchType: 'remove',
+            data: data.val(),
+          });
+        });
+        this.query.push(q);
       });
-    });
-    this.removeQuery = this.query.on('child_removed', (data) => {
-      this.removed.next({matchType: 'remove',
-        data: data.val(),
+      this.subscription = merge(this.added, this.removed);
+      return this.subscription;
+    } else {
+      this.addQuery = this.query.on('child_added', (data) => {
+        this.added.next({matchType: 'add',
+          data: data.val(),
+        });
       });
-    });
-    this.subscription = merge(this.added, this.removed);
-    return this.subscription;
+      this.removeQuery = this.query.on('child_removed', (data) => {
+        this.removed.next({matchType: 'remove',
+          data: data.val(),
+        });
+      });
+      this.subscription = merge(this.added, this.removed);
+      return this.subscription;
+    }
   }
   /**
    * @param {Object} details - Object with further information
@@ -118,7 +145,14 @@ class FirebaseClient {
   updateQuery(details) {
     this.added = new ReplaySubject(40);
     this.removed = new ReplaySubject(40);
-    this.query.off();
+    if (this.queryType == QUERY_SERVERROOM) {
+      for (let i = 0; i<this.query.length; i++) {
+        this.query[i].off();
+      }
+      this.query = [];
+    } else {
+      this.query.off();
+    }
     this.details = details;
     this.setQuery();
     return this.doQuery();
@@ -128,7 +162,7 @@ class FirebaseClient {
    */
   saveData(data) {
     let newDataRef = firebase.database()
-        .ref('serverData/'+data.room+'/').push();
+        .ref('serverData/'+data.room+'/'+data.sid).push();
     newDataRef.set({
       mid: data.mid,
       sid: data.sid,
@@ -145,12 +179,7 @@ class FirebaseClient {
    * Deletes all Serverdata to reset the Application
    */
   deleteAll() {
-    let query = DB.ServerData.find();
-    query.resultStream((result) => {
-      result.forEach((data) => {
-        data.delete();
-      });
-    });
+    firebase.database().ref('/serverData/').remove();
   }
 }
 /** */
@@ -247,10 +276,23 @@ class BaqendClient {
   deleteAll() {
     let query = DB.ServerData.find();
     query.resultStream((result) => {
-      result.forEach((data) => {
-        data.delete();
-      });
+      let res = Array.from(result);
+      this.delete(res, 0);
     });
+  }
+  /**
+   * @param {Array} result
+   * @param {Number} count
+   */
+  delete(result, count) {
+    if (count<result.length) {
+      result[count].delete().then(() => {
+        count++;
+        this.delete(result, count);
+      }, () => {
+        console.log('Problem');
+      });
+    }
   }
 }
 

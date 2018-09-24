@@ -13,11 +13,13 @@ initConnections.then((client) => {
   const overviewClient = new OverviewClient(controls);
   const roomClientBa = new RoomClient(controls, PROV_BAQEND);
   const roomClientFb = new RoomClient(controls, PROV_FIREBASE);
-  const serverClient = new ServerClient(controls, PROV_BAQEND, 'r2r2u0');
+  const serverClientBa = new ServerClient(controls, PROV_BAQEND, 'r2r2u0');
+  const serverClientFb = new ServerClient(controls, PROV_FIREBASE, 'r2r2u0');
   overviewClient.init();
   roomClientBa.init();
   roomClientFb.init();
-  serverClient.init();
+  serverClientBa.init();
+  serverClientFb.init();
   document.getElementById('init').addEventListener('click', () => {
     producer.setup();
   });
@@ -30,7 +32,9 @@ initConnections.then((client) => {
   document.getElementById('reset').addEventListener('click', () => {
     producer.reset();
   });
-  document.getElementById('hottest').checked = true;
+  controls.getHottestServer().subscribe((value) => {
+    document.getElementById('hottest').checked = value;
+  });
   let roomSelect = document.getElementById('room');
   roomSelect.addEventListener('change', () => {
     if (roomSelect.value != room) {
