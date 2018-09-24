@@ -1,14 +1,16 @@
-import {Dbinterface, PROV_BAQEND, QUERY_SERVER}
+import {Dbinterface, PROV_BAQEND, PROV_FIREBASE, QUERY_SERVER}
   from '../db-interface/dbinterface.js';
 
 /** */
 export class ServerClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
+   * @param {Number} provider - Provider of Data-Access
    * @param {String} serverid - ID of the server
    */
-  constructor(controls, serverid) {
+  constructor(controls, provider, serverid) {
     this.controls = controls;
+    this.provider = provider;
     this.initial = true;
     this.serverid = serverid;
     this.limit = 25;
@@ -19,7 +21,7 @@ export class ServerClient {
         this.serverid = value;
         this.setDetails();
         if (this.initial) {
-          this.Dbinterface = new Dbinterface(PROV_BAQEND, QUERY_SERVER, {
+          this.Dbinterface = new Dbinterface(this.provider, QUERY_SERVER, {
             serverid: this.serverid,
             limit: this.limit,
           });
@@ -44,7 +46,11 @@ export class ServerClient {
   };
   /** */
   init() {
-    this.anctx = document.getElementById('srv_ba_cvs').getContext('2d');
+    if (this.provider == PROV_BAQEND) {
+      this.anctx = document.getElementById('srv_ba_cvs').getContext('2d');
+    } else if (this.provider == PROV_FIREBASE) {
+      this.anctx = document.getElementById('srv_fb_cvs').getContext('2d');
+    }
     this.redraw();
   }
   /** */

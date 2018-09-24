@@ -1,4 +1,4 @@
-import {from} from 'rxjs';
+import {from, merge, ReplaySubject} from 'rxjs';
 import {map} from 'rxjs/operators';
 export const PROV_BAQEND = 0;
 export const PROV_FIREBASE = 1;
@@ -21,7 +21,7 @@ export class Dbinterface {
    */
   constructor(provider, querytype, details) {
     switch (provider) {
-      case PROV_FIREBASE: this.dbprov = new FirebaseClient();
+      case PROV_FIREBASE: this.dbprov = new FirebaseClient(querytype, details);
         break;
       case PROV_BAQEND: this.dbprov = new BaqendClient(querytype, details);
         break;
@@ -48,14 +48,109 @@ export class Dbinterface {
   updateQuery(details) {
     return this.dbprov.updateQuery(details);
   }
+  /**
+   * Deletes all Serverdata to reset the Application
+   */
+  deleteAll() {
+    this.dbprov.deleteAll();
+  }
 }
 /** */
 class FirebaseClient {
-  /** */
-  constructor() {
+  /**
+   *  @param {number} queryType - The Type of Query
+   *  @param {Object} details - Object with further information
+   * like min-x, min-y or limit
+   */
+  constructor(queryType, details) {
+    this.queryType = queryType;
+    this.details = details;
+    this.added = new ReplaySubject(40);
+    this.removed = new ReplaySubject(40);
+    this.setQuery();
   }
   /** */
-  saveData() {
+  setQuery() {
+    switch (this.queryType) {
+      case QUERY_ALL: this.query = DB.ServerData.find()
+          .descending('ts');
+        break;
+      case QUERY_MINX: this.query = DB.SensorData.find();
+        break;
+      case QUERY_MINXY: this.query = DB.SensorData.find();
+        break;
+      case QUERY_SERVERROOM: this.query = firebase.database()
+          .ref('serverData/'+this.details.room+'/')
+          .orderByChild('ts')
+          .limitToLast(20);
+        break;
+      case QUERY_SERVER: this.query = '';
+        break;
+      case QUERY_OS: this.query = DB.SensorData.find();
+        break;
+      case QUERY_AVG: this.query = DB.SensorData.find();
+        break;
+      default: this.query = DB.SensorData.find();
+    }
+  }
+  /**
+   * @return {Observable} Subscription
+   */
+  doQuery() {
+    this.addQuery = this.query.on('child_added', (data) => {
+      this.added.next({matchType: 'add',
+        data: data.val(),
+      });
+    });
+    this.removeQuery = this.query.on('child_removed', (data) => {
+      this.removed.next({matchType: 'remove',
+        data: data.val(),
+      });
+    });
+    this.subscription = merge(this.added, this.removed);
+    return this.subscription;
+  }
+  /**
+   * @param {Object} details - Object with further information
+   * like min-x, min-y or limit
+   * @return {Observable} The new Subscription
+   */
+  updateQuery(details) {
+    this.added = new ReplaySubject(40);
+    this.removed = new ReplaySubject(40);
+    this.query.off();
+    this.details = details;
+    this.setQuery();
+    return this.doQuery();
+  }
+  /**
+   * @param {Object} data - Sensordata which should be saved
+   */
+  saveData(data) {
+    let newDataRef = firebase.database()
+        .ref('serverData/'+data.room+'/').push();
+    newDataRef.set({
+      mid: data.mid,
+      sid: data.sid,
+      serverroom: data.room,
+      rack: data.rack,
+      unit: data.unit,
+      os: data.os,
+      temp: data.temp,
+      cpu: data.cpu,
+      ts: data.ts,
+    });
+  }
+  /**
+   * Deletes all Serverdata to reset the Application
+   */
+  deleteAll() {
+    let query = DB.ServerData.find();
+    query.resultStream((result) => {
+      result.forEach((data) => {
+        data.delete();
+      });
+    });
   }
 }
 /** */
@@ -74,8 +169,7 @@ class BaqendClient {
   setQuery() {
     switch (this.queryType) {
       case QUERY_ALL: this.query = DB.ServerData.find()
-          .descending('ts')
-          .limit(40);
+          .descending('ts');
         break;
       case QUERY_MINX: this.query = DB.SensorData.find();
         break;
@@ -146,6 +240,17 @@ class BaqendClient {
       ts: data.ts,
     });
     serverData.save();
+  }
+  /**
+   * Deletes all Serverdata to reset the Application
+   */
+  deleteAll() {
+    let query = DB.ServerData.find();
+    query.resultStream((result) => {
+      result.forEach((data) => {
+        data.delete();
+      });
+    });
   }
 }
 

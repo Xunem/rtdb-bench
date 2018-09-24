@@ -1,15 +1,18 @@
-import {Dbinterface, PROV_BAQEND, QUERY_SERVERROOM}
+import {Dbinterface, PROV_BAQEND, PROV_FIREBASE, QUERY_SERVERROOM}
   from '../db-interface/dbinterface.js';
 
 /** */
 export class RoomClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
+   * @param {Number} provider - The Provider which should be used for
+   * Data-Access
    */
-  constructor(controls) {
+  constructor(controls, provider) {
     this.controls = controls;
-    this.racks = 5;
-    this.units = 10;
+    this.provider = provider;
+    this.racks = 4;
+    this.units = 5;
     this.hover = '';
     this.serverData = new Map();
     this.serverDisplay = new Map();
@@ -19,30 +22,34 @@ export class RoomClient {
       this.room = value;
       this.setDetails();
       if (this.initial) {
-        this.Dbinterface = new Dbinterface(PROV_BAQEND, QUERY_SERVERROOM, {
+        this.Dbinterface = new Dbinterface(this.provider, QUERY_SERVERROOM, {
           room: parseInt(value),
         });
         this.subscription = this.Dbinterface.doQuery().subscribe(
             (x) => this.handleEvent(x),
-            (e) => console.log('onError: %s', JSON.stringify(e)),
+            (e) => console.log('Room, onError: %s', JSON.stringify(e)),
             () => console.log('onCompleted'));
         this.initial = false;
       } else {
         this.subscription.unsubscribe();
         this.serverData = new Map();
-        console.log(value);
         this.subscription = this.Dbinterface.updateQuery({
           room: parseInt(value),
         }).subscribe(
             (x) => this.handleEvent(x),
-            (e) => console.log('onError: %s', JSON.stringify(e)),
+            (e) => console.log('Room, onError: %s', JSON.stringify(e)),
             () => console.log('onCompleted'));
       }
     });
   };
   /** */
   init() {
-    let cvs = document.getElementById('rm_ba_cvs');
+    let cvs;
+    if (this.provider == PROV_BAQEND) {
+      cvs = document.getElementById('rm_ba_cvs');
+    } else if (this.provider == PROV_FIREBASE) {
+      cvs = document.getElementById('rm_fb_cvs');
+    }
     this.anctx = cvs.getContext('2d');
     this.toolTip = document.getElementById('ToolTip');
     this.redraw();
@@ -228,6 +235,11 @@ export class RoomClient {
       this.anctx.fill();
       this.anctx.stroke();
     }
+    if (dataArray.length == 0) {
+      this.anctx.fillStyle = 'rgba(198, 198, 198, 0.9)';
+      this.anctx.fillRect(0, 0,
+          this.anctx.canvas.width, this.anctx.canvas.height);
+    }
   }
   /**
    * Delegates the events to the appropriate Function
@@ -252,7 +264,7 @@ export class RoomClient {
       cpu: data.cpu,
       temp: data.temp,
     });
-    this.serverData.set(data.mid, data);
+    this.serverData.set(data.sid, data);
     this.redraw();
   }
 
@@ -261,7 +273,6 @@ export class RoomClient {
    * @param {*} mid - ID of the Measurement Point which should be deleted
    */
   remove(mid) {
-    this.serverData.delete(mid);
     this.redraw();
   }
   /**

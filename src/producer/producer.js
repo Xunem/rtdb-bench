@@ -16,6 +16,7 @@ export class Producer {
     this.servers = [];
     this.serverCount;
     this.counter = 0;
+    this.initial = true;
   }
   /** */
   setup() {
@@ -56,6 +57,10 @@ export class Producer {
 
   /** */
   start() {
+    if (this.initial) {
+      this.setup();
+      this.initial = false;
+    }
     this.refreshIntervalId = setInterval(() =>{
       for (let i = 0; i < this.insertRate; i++) {
         let oldData = this.servers[this.counter];
@@ -95,5 +100,13 @@ export class Producer {
   /** */
   stop() {
     clearInterval(this.refreshIntervalId);
+  }
+  /**
+   * Deletes all Data and resets the Application
+   */
+  reset() {
+    this.baqendClient.deleteAll();
+    this.firebaseClient.deleteAll();
+    this.initial = true;
   }
 }
