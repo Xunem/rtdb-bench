@@ -27,7 +27,8 @@ export class ServerClient {
           });
           this.subscription = this.Dbinterface.doQuery().subscribe(
               (x) => this.handleEvent(x),
-              (e) => console.log('onError: %s', JSON.stringify(e)),
+              (e) => console.log(this.provider + 'onError: %s',
+                  JSON.stringify(e)),
               () => console.log('onCompleted'));
           this.initial = false;
         } else {
@@ -38,7 +39,8 @@ export class ServerClient {
             limit: this.limit,
           }).subscribe(
               (x) => this.handleEvent(x),
-              (e) => console.log('onError: %s', JSON.stringify(e)),
+              (e) => console.log(this.provider + 'onError: %s',
+                  JSON.stringify(e)),
               () => console.log('onCompleted'));
         }
       }
@@ -52,6 +54,7 @@ export class ServerClient {
       this.anctx = document.getElementById('srv_fb_cvs').getContext('2d');
     }
     this.redraw();
+    this.ts = Date.now();
   }
   /** */
   redraw() {
@@ -144,7 +147,6 @@ export class ServerClient {
    */
   remove(mid) {
     this.serverData.delete(mid);
-    console.log(this.serverData);
     this.redraw();
   }
 

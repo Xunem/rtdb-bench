@@ -5,6 +5,7 @@ import {OverviewClient} from './src/client/overviewClient.js';
 import {RoomClient} from './src/client/roomClient.js';
 import {ServerClient} from './src/client/serverClient.js';
 import {Controls} from './src/controls/controls.js';
+import 'nouislider';
 
 let room = 1;
 initConnections.then((client) => {
@@ -22,6 +23,64 @@ initConnections.then((client) => {
   roomClientFb.init();
   serverClientBa.init();
   serverClientFb.init();
+  let sliderTemp = document.getElementById('sliderTemp');
+  let sliderCpu = document.getElementById('sliderCpu');
+  let minTemp = document.getElementById('minTemp');
+  let maxTemp = document.getElementById('maxTemp');
+  let minCpu = document.getElementById('minCpu');
+  let maxCpu = document.getElementById('maxCpu');
+  noUiSlider.create(sliderTemp, {
+    start: [25, 100],
+    connect: true,
+    range: {
+      'min': 25,
+      'max': 100,
+    },
+  });
+  sliderTemp.noUiSlider.on('update', (values, handle) => {
+    let value = values[handle];
+    if (handle) {
+      controls.getMaxTemp().next(value);
+      console.log('v'+value);
+      maxTemp.value = value;
+    } else {
+      controls.getMinTemp().next(value);
+      console.log('v'+value);
+      minTemp.value = value;
+    }
+  });
+  minTemp.addEventListener('change', () => {
+    controls.getMinTemp().next(minTemp.value);
+  });
+  maxTemp.addEventListener('change', () => {
+    controls.getMaxTemp().next(maxCpu.value);
+  });
+  noUiSlider.create(sliderCpu, {
+    start: [50, 100],
+    connect: true,
+    range: {
+      'min': 50,
+      'max': 100,
+    },
+  });
+  sliderCpu.noUiSlider.on('update', (values, handle) => {
+    let value = values[handle];
+    if (handle) {
+      controls.getMinCpu().next(value);
+      maxCpu.value = value;
+    } else {
+      controls.getMaxCpu().next(value);
+      minCpu.value = value;
+    }
+  });
+  minCpu.addEventListener('change', () => {
+    controls.getMinCpu().next(minCpu.value);
+    slider.noUiSlider.set([minCpu.value, null]);
+  });
+  maxCpu.addEventListener('change', () => {
+    controls.getMaxCpu().next(maxCpu.value);
+  });
+
   document.getElementById('init').addEventListener('click', () => {
     producer.setup();
   });

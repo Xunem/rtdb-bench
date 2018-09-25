@@ -101,12 +101,10 @@ class FirebaseClient {
     if (this.queryType == QUERY_ALL) {
       let allRooms = firebase.database().ref('serverData/');
       allRooms.on('child_added', (roomdata) => {
-        console.log('serverData/'+roomdata.key);
         let allServers = firebase.database().ref('serverData/'
             +roomdata.key+'/');
         this.query = [];
         allServers.on('child_added', (data) => {
-          console.log('serverData/'+roomdata.key+'/'+data.key);
           let q = firebase.database().ref('serverData/'
               +roomdata.key+'/'+ data.key +'/')
               .orderByChild('ts')
@@ -260,12 +258,14 @@ class BaqendClient {
               matchType: 'add',
               data: event.data,
             };
+            newEvent.data.mid = newEvent.data.id;
             return newEvent;
           } else if (event.matchType === 'remove') {
             let newEvent = {
               matchType: 'remove',
               data: event.data,
             };
+            newEvent.data.mid = newEvent.data.id;
             return newEvent;
           }
         }));
@@ -286,7 +286,7 @@ class BaqendClient {
    */
   saveData(data) {
     let serverData = new DB.ServerData({
-      mid: data.mid,
+      id: data.mid,
       sid: data.sid,
       serverroom: data.room,
       rack: data.rack,
@@ -303,24 +303,11 @@ class BaqendClient {
    */
   deleteAll() {
     let query = DB.ServerData.find();
-    query.resultStream((result) => {
-      let res = Array.from(result);
-      this.delete(res, 0);
-    });
-  }
-  /**
-   * @param {Array} result
-   * @param {Number} count
-   */
-  delete(result, count) {
-    if (count<result.length) {
-      result[count].delete().then(() => {
-        count++;
-        this.delete(result, count);
-      }, () => {
-        console.log('Problem');
+    query.resultList((result) => {
+      result.forEach((data) => {
+        // data.delete();
       });
-    }
+    });
   }
 }
 

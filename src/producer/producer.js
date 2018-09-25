@@ -20,7 +20,6 @@ export class Producer {
   }
   /** */
   setup() {
-    console.log('init');
     let os = {
       0: 'freebsd',
       1: 'ubuntu',
@@ -90,7 +89,6 @@ export class Producer {
         newData.temp = oldData.temp;
         newData.cpu = oldData.cpu;
         newData.ts = Date.now();
-        console.log(JSON.stringify(newData));
         this.counter = (this.counter+1)%this.serverCount;
         this.firebaseClient.saveData(newData);
         this.baqendClient.saveData(newData);

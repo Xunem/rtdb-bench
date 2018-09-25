@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>Server Monitoring</title>
     <link rel="stylesheet" type="text/css" href="main.css">
+    <link rel="stylesheet" href="https://unpkg.com/nouislider@12.0.0/distribute/nouislider.min.css">
 </head>
 
 <body>
@@ -19,13 +20,34 @@
         <button id="reset">Reset</button>
       </div>
       <div id="ovControl" class="subControl">
-        <label for="temp">Temperature</label>
-            <input type="range" id="start" name="temp"
-                    min="25" max="65" />
+        <div id="tempControl">
+          <span class="type">Temperature</span>
+          <div class="min">
+            <input type="number" min="25" max="100" step="1" value="25" id="minTemp">
+          </div>
+          <div class="rangeslider">
+            <div id="sliderTemp">
+            </div>
+          </div>
+          <div class="max">
+              <input type="number" min="25" max="100" step="1"  value="100" id="maxTemp">
+          </div>
+        </div>
+        <div id="cpuControl">
+            <span class="type">Cpu</span>
+            <div class="min">
+                <input type="number" min="50" max="100" step="1"  value="50" id="minCpu">
+            </div>
+            <div class="rangeslider">
+                <div id="sliderCpu">
+                </div>
+            </div>
+            <div class="max">
+                <input type="number" min="50" max="100" step="1"  value="100" id="maxCpu">
+            </div>
+        </div>
         
-            <label for="cpu">CPU</label>
-            <input type="range" id="cowbell" name="cpu" 
-                    min="0" max="100" value="0" step="2" />
+        
         
       </div>
       <div id="rmControl" class="subControl">

@@ -1,3 +1,4 @@
+var webpack = require('webpack');
 module.exports = {
     entry: './index.js',
     output: {
@@ -22,5 +23,10 @@ module.exports = {
                 }
               }
         }]
-    }
+    },
+    plugins: [
+      new webpack.ProvidePlugin({
+        noUiSlider: 'nouislider'
+      })
+    ]
 };

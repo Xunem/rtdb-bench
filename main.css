@@ -69,7 +69,7 @@ input:checked + .slider:before {
 .subControl {
   display:block;
   width:404px;
-  height:50px;
+  height:130px;
   float:left;
 }
 .client{
@@ -103,3 +103,46 @@ input:checked + .slider:before {
 #ToolTip:hover{
   display:none!important;
 }
+#tempControl {
+  padding:0;
+  width:400px;
+  height:60px;
+  border:2px solid black;
+}
+#cpuControl {
+  padding:0;
+  width:400px;
+  height:65px;
+  border:2px solid black;
+}
+.type{
+  width:100%;
+  text-align:center;
+  padding: 5px 0;
+  float:left;
+  font-weight:bold;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.min {
+  width:100px;
+  float:left;
+}
+.min input{
+  width:50px;
+  float:right;
+  margin-right:20px;
+}
+.rangeslider {
+  width:200px;
+  float:left;
+}
+.max{
+  width:100px;
+  float:left;
+}
+.max input{
+  float:left;
+  margin-left:20px;
+  width:50px;
+}
+

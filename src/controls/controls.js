@@ -11,6 +11,14 @@ export class Controls {
    *
    */
   constructor() {
+    this.minTemp = new BehaviorSubject();
+    // this.minTemp.next(25);
+    this.maxTemp = new BehaviorSubject();
+    // this.maxTemp.next(100);
+    this.minCpu = new BehaviorSubject();
+    // this.minCpu.next(50);
+    this.maxCpu = new BehaviorSubject();
+    // this.maxCpu.next(100);
     this.hottestServer = new BehaviorSubject();
     this.hottestServer.next(true);
     this.hottestServerId = new BehaviorSubject();
@@ -53,5 +61,29 @@ export class Controls {
    */
   getHottestServerId() {
     return this.hottestServerId;
+  }
+  /**
+   * @return {BehaviorSubject} Minimum Temperature Value for Overview Window
+   */
+  getMinTemp() {
+    return this.minTemp;
+  }
+  /**
+   * @return {BehaviorSubject} Maximum Temperature Value for Overview Window
+   */
+  getMaxTemp() {
+    return this.maxTemp;
+  }
+  /**
+   * @return {BehaviorSubject} Minimum Cpu Value for Overview Window
+   */
+  getMinCpu() {
+    return this.minCpu;
+  }
+  /**
+   * @return {BehaviorSubject} Maximum Cpu Value for Overview Window
+   */
+  getMaxCpu() {
+    return this.maxCpu;
   }
 }
