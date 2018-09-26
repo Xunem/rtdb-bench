@@ -50,7 +50,7 @@ export class Producer {
       server.ts = Date.now();
       this.servers.push(server);
       this.firebaseClient.saveData(server);
-      this.baqendClient.saveData(server);
+      // this.baqendClient.saveData(server);
     }
   }
 
@@ -91,7 +91,7 @@ export class Producer {
         newData.ts = Date.now();
         this.counter = (this.counter+1)%this.serverCount;
         this.firebaseClient.saveData(newData);
-        this.baqendClient.saveData(newData);
+        // this.baqendClient.saveData(newData);
       }
     }, 1000);
   }

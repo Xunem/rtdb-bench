@@ -68,8 +68,9 @@ input:checked + .slider:before {
 
 .subControl {
   display:block;
-  width:404px;
-  height:130px;
+  width:400px;
+  border:2px solid black;
+  height:160px;
   float:left;
 }
 .client{
@@ -86,6 +87,20 @@ input:checked + .slider:before {
   font-family: Arial, Helvetica, sans-serif;
   line-height: 40px;
   font-weight: bold;
+}
+@keyframes bgchanger {
+  0%, 100% {
+    background-color: black;
+  }
+  50% {
+    background-color: grey;
+  }
+}
+.serverChange {
+  -webkit-animation: bgchanger 2s normal forwards; /* Safari 4+ */
+  -moz-animation:    bgchanger 2s normal forwards; /* Fx 5+ */
+  -o-animation:      bgchanger 2s normal forwards; /* Opera 12+ */
+  animation:         bgchanger 2s normal forwards; /* IE 10+, Fx 29+ */
 }
 .client Canvas{
   border-top:2px solid black;
@@ -107,13 +122,11 @@ input:checked + .slider:before {
   padding:0;
   width:400px;
   height:60px;
-  border:2px solid black;
 }
 #cpuControl {
   padding:0;
   width:400px;
   height:65px;
-  border:2px solid black;
 }
 .type{
   width:100%;
@@ -145,4 +158,8 @@ input:checked + .slider:before {
   margin-left:20px;
   width:50px;
 }
-
+#applyRange {
+  float:right;
+  height:26px;
+  margin-right:20px;
+}

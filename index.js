@@ -66,19 +66,25 @@ initConnections.then((client) => {
   sliderCpu.noUiSlider.on('update', (values, handle) => {
     let value = values[handle];
     if (handle) {
-      controls.getMinCpu().next(value);
+      controls.getMaxCpu().next(value);
       maxCpu.value = value;
     } else {
-      controls.getMaxCpu().next(value);
+      controls.getMinCpu().next(value);
       minCpu.value = value;
     }
   });
   minCpu.addEventListener('change', () => {
     controls.getMinCpu().next(minCpu.value);
-    slider.noUiSlider.set([minCpu.value, null]);
+    sliderCpu.noUiSlider.set([minCpu.value, null]);
   });
   maxCpu.addEventListener('change', () => {
     controls.getMaxCpu().next(maxCpu.value);
+    sliderCpu.noUiSlider.set([null, maxCpu.value]);
+  });
+
+  document.getElementById('applyRange').addEventListener('click', () => {
+    overviewClientBa.updateFilter();
+    overviewClientFb.updateFilter();
   });
 
   document.getElementById('init').addEventListener('click', () => {

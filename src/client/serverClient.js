@@ -154,7 +154,12 @@ export class ServerClient {
    *
    */
   setDetails() {
-    document.getElementById('server_details').innerHTML =
-      'Server '+ this.serverid;
+    let current = document.getElementById('server_details');
+    if (current.innerHTML !== 'Server '+ this.serverid) {
+      current.innerHTML = 'Server '+ this.serverid;
+      current.classList.add('serverChange');
+      let newnode = current.cloneNode(true);
+      current.parentNode.replaceChild(newnode, current);
+    }
   }
 }

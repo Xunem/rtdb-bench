@@ -249,6 +249,12 @@ export class RoomClient {
       this.anctx.fillStyle = 'rgba(198, 198, 198, 0.9)';
       this.anctx.fillRect(0, 0,
           this.anctx.canvas.width, this.anctx.canvas.height);
+      this.anctx.fillStyle = 'BLACK';
+      this.anctx.textAlign = 'center';
+      this.anctx.font = 'bolder 30px Arial';
+      this.anctx.fillText('No Data',
+          Math.floor(this.anctx.canvas.width/2),
+          Math.floor(this.anctx.canvas.height/2));
     }
   }
   /**
