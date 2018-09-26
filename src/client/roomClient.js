@@ -60,58 +60,60 @@ export class RoomClient {
     this.redraw();
     // Adding Eventlisteners for mouseover effects and tooltip on the canvas
     cvs.addEventListener('mousemove', (e) => {
-      let r = cvs.getBoundingClientRect();
-      let width = this.anctx.canvas.width;
-      let height = this.anctx.canvas.height;
-      let spacingHeight = Math.floor((height-60)/this.units);
-      let spacingWidth = Math.floor((width-20)/this.racks);
-      let x = e.clientX - r.left;
-      let y = e.clientY - r.top;
-      let upperEndY = 30 + Math.floor(spacingHeight*0.2);
-      let lowerEndY = 30 + Math.floor(spacingHeight*0.2) + 5 * spacingHeight;
-      if ((y > upperEndY && y < lowerEndY)
-        && ((x > 10 + Math.floor(spacingWidth)*0
-                  + Math.floor(spacingWidth*0.1)
-            && x < 10 + Math.floor(spacingWidth)*0
-                  + Math.floor(spacingWidth*0.1)
-                  + Math.floor(spacingWidth*0.8))
-            || (x > 10 + Math.floor(spacingWidth)*1
-                  + Math.floor(spacingWidth*0.1)
-            && x < 10 + Math.floor(spacingWidth)*1
-                  + Math.floor(spacingWidth*0.1)
-                  + Math.floor(spacingWidth*0.8))
-            || (x > 10 + Math.floor(spacingWidth)*2
-                  + Math.floor(spacingWidth*0.1)
-            && x < 10 + Math.floor(spacingWidth)*2
-                  + Math.floor(spacingWidth*0.1)
-                  + Math.floor(spacingWidth*0.8))
-            || (x > 10 + Math.floor(spacingWidth)*3
-                  + Math.floor(spacingWidth*0.1)
-            && x < 10 + Math.floor(spacingWidth)*3
-                  + Math.floor(spacingWidth*0.1)
-                  + Math.floor(spacingWidth*0.8))
-            || (x > 10 + Math.floor(spacingWidth)*4
-                  + Math.floor(spacingWidth*0.1)
-            && x < 10 + Math.floor(spacingWidth)*4
-                  + Math.floor(spacingWidth*0.1)
-                  + Math.floor(spacingWidth*0.8)))) {
-        let rack = Math.floor((x-10)/spacingWidth);
-        let unit = Math.floor((y-upperEndY)/spacingHeight);
-        this.hover = 'r'+this.room+'r'+rack+'u'+unit;
-        cvs.style.cursor = 'pointer';
-        let serverInfo = this.serverDisplay.get(this.hover);
-        this.toolTip.style.top = (e.pageY-10)+'px';
-        this.toolTip.style.left = (e.pageX+20)+'px';
-        this.toolTip.innerHTML = this.hover +'<br>'
-            +'Temp: '+ Math.floor(serverInfo.temp) +'°C<br>'
-            +'CPU: '+ Math.floor(serverInfo.cpu) +'%';
-        this.toolTip.style.display = 'block';
-      } else {
-        this.hover = '';
-        this.toolTip.style.display = 'none';
-        cvs.style.cursor = 'auto';
+      if (this.serverData.size > 0) {
+        let r = cvs.getBoundingClientRect();
+        let width = this.anctx.canvas.width;
+        let height = this.anctx.canvas.height;
+        let spacingHeight = Math.floor((height-60)/this.units);
+        let spacingWidth = Math.floor((width-20)/this.racks);
+        let x = e.clientX - r.left;
+        let y = e.clientY - r.top;
+        let upperEndY = 30 + Math.floor(spacingHeight*0.2);
+        let lowerEndY = 30 + Math.floor(spacingHeight*0.2) + 5 * spacingHeight;
+        if ((y > upperEndY && y < lowerEndY)
+          && ((x > 10 + Math.floor(spacingWidth)*0
+                    + Math.floor(spacingWidth*0.1)
+              && x < 10 + Math.floor(spacingWidth)*0
+                    + Math.floor(spacingWidth*0.1)
+                    + Math.floor(spacingWidth*0.8))
+              || (x > 10 + Math.floor(spacingWidth)*1
+                    + Math.floor(spacingWidth*0.1)
+              && x < 10 + Math.floor(spacingWidth)*1
+                    + Math.floor(spacingWidth*0.1)
+                    + Math.floor(spacingWidth*0.8))
+              || (x > 10 + Math.floor(spacingWidth)*2
+                    + Math.floor(spacingWidth*0.1)
+              && x < 10 + Math.floor(spacingWidth)*2
+                    + Math.floor(spacingWidth*0.1)
+                    + Math.floor(spacingWidth*0.8))
+              || (x > 10 + Math.floor(spacingWidth)*3
+                    + Math.floor(spacingWidth*0.1)
+              && x < 10 + Math.floor(spacingWidth)*3
+                    + Math.floor(spacingWidth*0.1)
+                    + Math.floor(spacingWidth*0.8))
+              || (x > 10 + Math.floor(spacingWidth)*4
+                    + Math.floor(spacingWidth*0.1)
+              && x < 10 + Math.floor(spacingWidth)*4
+                    + Math.floor(spacingWidth*0.1)
+                    + Math.floor(spacingWidth*0.8)))) {
+          let rack = Math.floor((x-10)/spacingWidth);
+          let unit = Math.floor((y-upperEndY)/spacingHeight);
+          this.hover = 'r'+this.room+'r'+rack+'u'+unit;
+          cvs.style.cursor = 'pointer';
+          let serverInfo = this.serverDisplay.get(this.hover);
+          this.toolTip.style.top = (e.pageY-10)+'px';
+          this.toolTip.style.left = (e.pageX+20)+'px';
+          this.toolTip.innerHTML = this.hover +'<br>'
+              +'Temp: '+ Math.floor(serverInfo.temp) +'°C<br>'
+              +'CPU: '+ Math.floor(serverInfo.cpu) +'%';
+          this.toolTip.style.display = 'block';
+        } else {
+          this.hover = '';
+          this.toolTip.style.display = 'none';
+          cvs.style.cursor = 'auto';
+        }
+        this.redraw();
       }
-      this.redraw();
     });
     cvs.addEventListener('click', (e) => {
       if (this.hover) {

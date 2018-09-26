@@ -3,6 +3,10 @@ export const ROOMS = 2;
 export const RACKS = 4;
 export const UNITS = 5;
 export const DEFAULT_ROOM = 1;
+export const MIN_TEMP = 25;
+export const MAX_TEMP = 100;
+export const MIN_CPU = 50;
+export const MAX_CPU = 100;
 /**
  *
  */
@@ -12,13 +16,9 @@ export class Controls {
    */
   constructor() {
     this.minTemp = new BehaviorSubject();
-    // this.minTemp.next(25);
     this.maxTemp = new BehaviorSubject();
-    // this.maxTemp.next(100);
     this.minCpu = new BehaviorSubject();
-    // this.minCpu.next(50);
     this.maxCpu = new BehaviorSubject();
-    // this.maxCpu.next(100);
     this.hottestServer = new BehaviorSubject();
     this.hottestServer.next(true);
     this.hottestServerId = new BehaviorSubject();

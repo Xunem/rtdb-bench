@@ -3,10 +3,9 @@ import {map} from 'rxjs/operators';
 export const PROV_BAQEND = 0;
 export const PROV_FIREBASE = 1;
 export const QUERY_ALL = 10;
-export const QUERY_MINX = 20;
-export const QUERY_MINXY = 30;
-export const QUERY_SERVERROOM = 40;
-export const QUERY_OS = 50;
+export const QUERY_SINGLERANGE = 20;
+export const QUERY_DUALRANGE = 30;
+export const QUERY_SERVERROOM = 50;
 export const QUERY_AVG = 60;
 export const QUERY_SERVER = 70;
 export const INSERT = 80;
@@ -74,9 +73,9 @@ class FirebaseClient {
     switch (this.queryType) {
       case QUERY_ALL:
         break;
-      case QUERY_MINX: this.query = DB.SensorData.find();
+      case QUERY_SINGLERANGE: throw new Error('Query not supported');
         break;
-      case QUERY_MINXY: this.query = DB.SensorData.find();
+      case QUERY_DUALRANGE: throw new Error('Query not supported');
         break;
       case QUERY_SERVERROOM:
         break;
@@ -86,8 +85,6 @@ class FirebaseClient {
             .ref('serverData/'+room+'/'+this.details.serverid)
             .orderByChild('ts')
             .limitToLast(this.details.limit);
-        break;
-      case QUERY_OS: this.query = DB.SensorData.find();
         break;
       case QUERY_AVG: this.query = DB.SensorData.find();
         break;
@@ -226,9 +223,9 @@ class BaqendClient {
           .descending('ts')
           .limit(40);
         break;
-      case QUERY_MINX: this.query = DB.SensorData.find();
+      case QUERY_SINGLERANGE: this.query = DB.SensorData.find();
         break;
-      case QUERY_MINXY: this.query = DB.SensorData.find();
+      case QUERY_DUALRANGE: this.query = DB.SensorData.find();
         break;
       case QUERY_SERVERROOM: this.query = DB.ServerData.find()
           .equal('serverroom', this.details.room)
@@ -239,8 +236,6 @@ class BaqendClient {
           .equal('sid', this.details.serverid)
           .descending('ts')
           .limit(this.details.limit);
-        break;
-      case QUERY_OS: this.query = DB.SensorData.find();
         break;
       case QUERY_AVG: this.query = DB.SensorData.find();
         break;

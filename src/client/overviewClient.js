@@ -1,5 +1,7 @@
-import {Dbinterface, PROV_BAQEND, QUERY_ALL, PROV_FIREBASE}
+import {Dbinterface, PROV_BAQEND, QUERY_ALL,
+  QUERY_DUALRANGE, QUERY_SINGLERANGE, PROV_FIREBASE}
   from '../db-interface/dbinterface.js';
+import {MIN_TEMP, MAX_TEMP, MIN_CPU, MAX_CPU} from '../controls/controls.js';
 
 /** */
 export class OverviewClient {
@@ -41,10 +43,7 @@ export class OverviewClient {
     this.toolTip = document.getElementById('ToolTip');
 
     // Subscription for initial Query
-    this.subscription = this.Dbinterface.doQuery().subscribe(
-        (x) => this.handleEvent(x),
-        (e) => console.log('onError: %s', JSON.stringify(e)),
-        () => console.log('onCompleted'));
+    this.subscribe();
 
     // Subscriptions for Min and Max Range from Controlsection
     this.controls.getMinTemp().subscribe((value) => {
@@ -144,7 +143,24 @@ export class OverviewClient {
     this.redraw();
   }
   /**
-   *
+   * Subscribes to the selected Query
+   */
+  subscribe() {
+    console.log(this.provider + ' subscribed');
+    this.errorMsg = 'No Data';
+    this.serverDisplay = new Map();
+    this.serverData = new Map();
+    this.minTempLine = '';
+    this.maxTempLine = '';
+    this.minCpuLine = '';
+    this.maxCpuLine = '';
+    this.subscription = this.Dbinterface.doQuery().subscribe(
+        (x) => this.handleEvent(x),
+        (e) => console.log('onError: %s', JSON.stringify(e)),
+        () => console.log('onCompleted'));
+  }
+  /**
+   * Calculates X-Position according to selected Range and Canvas-Size
    * @param {*} data
    * @return {Number}
    */
@@ -156,7 +172,7 @@ export class OverviewClient {
     return this.offset + Math.floor(relValue*pxRange);
   }
   /**
-   *
+   * Calculates Y-Position according to selected Range and Canvas-Size
    * @param {*} data
    * @return {Number}
    */
@@ -328,9 +344,63 @@ export class OverviewClient {
     }
   }
   /**
-   *
+   * Updates the Filterrange and executes the according new query
    */
   updateFilter() {
-    this.subscription.unsubscribe();
+    let tempChanged = (this.minTempLine || this.maxTempLine);
+    let cpuChanged = (this.minCpuLine || this.maxCpuLine);
+    this.minTemp = (this.minTempLine) ? this.minTempLine : this.minTemp;
+    this.maxTemp = (this.maxTempLine) ? this.maxTempLine : this.maxTemp;
+    this.minCpu = (this.minCpuLine) ? this.minCpuLine : this.minCpu;
+    this.maxCpu = (this.maxCpuLine) ? this.maxCpuLine : this.maxCpu;
+    if (this.minTemp == MIN_TEMP && this.maxTemp == MAX_TEMP
+      && this.minCpu == MIN_CPU && this.maxCpu == MAX_CPU) {
+      this.subscription.unsubscribe();
+      this.Dbinterface = new Dbinterface(this.provider, QUERY_ALL, {});
+      this.subscribe();
+      this.redraw();
+    } else {
+      try {
+        if (tempChanged && cpuChanged) {
+          this.subscription.unsubscribe();
+          this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
+              {
+                minTemp: this.minTempLine,
+                maxTemp: this.maxTempLine,
+                minCpu: this.minCpuLine,
+                maxCpu: this.maxCpuLine,
+              });
+          this.subscribe();
+          this.redraw();
+        } else if (tempChanged && !cpuChanged) {
+          this.subscription.unsubscribe();
+          this.Dbinterface = new Dbinterface(this.provider, QUERY_SINGLERANGE,
+              {
+                range: 'temp',
+                minTemp: this.minTempLine,
+                maxTemp: this.maxTempLine,
+              });
+          this.subscribe();
+          this.redraw();
+        } else if (!tempChanged && cpuChanged) {
+          this.subscription.unsubscribe();
+          this.Dbinterface = new Dbinterface(this.provider, QUERY_SINGLERANGE,
+              {
+                range: 'cpu',
+                minTemp: this.minCpuLine,
+                maxTemp: this.maxCpuLine,
+              });
+          this.subscribe();
+          this.redraw();
+        } else {
+          console.log('Range not changed.');
+        }
+      } catch (err) {
+        this.errorMsg = err.message;
+        this.subscription.unsubscribe();
+        this.serverData = new Map();
+        this.redraw();
+      }
+    }
   }
 }
