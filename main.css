@@ -82,6 +82,12 @@ input:checked + .slider:before {
   height: 50px;
   margin:30px auto;
 }
+#hottestSrv {
+  margin:30px auto;
+  width: 300px;
+  display:block;
+  font-weight:bold;
+}
 .subControl {
   display:block;
   width:400px;
