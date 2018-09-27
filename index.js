@@ -106,7 +106,7 @@ initConnections.then((client) => {
   controls.getHottestServer().subscribe((value) => {
     document.getElementById('hottest').checked = value;
   });
-  let roomSelect = document.getElementById('room');
+  let roomSelect = document.getElementById('roomSelect');
   roomSelect.addEventListener('change', () => {
     if (roomSelect.value != room) {
       room = roomSelect.value;

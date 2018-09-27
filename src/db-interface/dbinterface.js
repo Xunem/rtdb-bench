@@ -34,6 +34,12 @@ export class Dbinterface {
     this.dbprov.saveData(data);
   }
   /**
+   * @param {String} id
+   */
+  updateData(id) {
+    this.dbprov.updateData(id);
+  }
+  /**
    * @return {s}
    */
   doQuery() {
@@ -195,7 +201,13 @@ class FirebaseClient {
       temp: data.temp,
       cpu: data.cpu,
       ts: data.ts,
+      live: data.live,
     });
+  }
+  /**
+   * @param {String} id
+   */
+  updateData(id) {
   }
   /**
    * Deletes all Serverdata to reset the Application
@@ -220,17 +232,24 @@ class BaqendClient {
   setQuery() {
     switch (this.queryType) {
       case QUERY_ALL: this.query = DB.ServerData.find()
-          .descending('ts')
-          .limit(40);
+          .equal('live', true);
         break;
-      case QUERY_SINGLERANGE: this.query = DB.SensorData.find();
+      case QUERY_SINGLERANGE:
+        this.query = DB.ServerData.find()
+            .between(this.details.range,
+                this.details.min, this.details.max);
         break;
-      case QUERY_DUALRANGE: this.query = DB.SensorData.find();
+      case QUERY_DUALRANGE:
+        this.query = DB.ServerData.find()
+            .equal('live', true)
+            .between('cpu',
+                this.details.minCpu, this.details.maxCpu)
+            .between('temp',
+                this.details.minTemp, this.details.maxTemp);
         break;
       case QUERY_SERVERROOM: this.query = DB.ServerData.find()
           .equal('serverroom', this.details.room)
-          .descending('ts')
-          .limit(20);
+          .equal('live', true);
         break;
       case QUERY_SERVER: this.query = DB.ServerData.find()
           .equal('sid', this.details.serverid)
@@ -290,8 +309,18 @@ class BaqendClient {
       temp: data.temp,
       cpu: data.cpu,
       ts: data.ts,
+      live: data.live,
     });
     serverData.save();
+  }
+  /**
+   * @param {String} id
+   */
+  updateData(id) {
+    DB.ServerData.load(id).then((data) => {
+      data.live = false;
+      data.update();
+    });
   }
   /**
    * Deletes all Serverdata to reset the Application

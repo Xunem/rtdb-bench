@@ -48,10 +48,12 @@ export class Producer {
       server.temp = rand*40+25;
       server.cpu = rand*50+50;
       server.ts = Date.now();
+      server.live = true;
       this.servers.push(server);
       this.firebaseClient.saveData(server);
-      // this.baqendClient.saveData(server);
+      this.baqendClient.saveData(server);
     }
+    this.initial = false;
   }
 
   /** */
@@ -89,9 +91,13 @@ export class Producer {
         newData.temp = oldData.temp;
         newData.cpu = oldData.cpu;
         newData.ts = Date.now();
+        newData.live = true;
         this.counter = (this.counter+1)%this.serverCount;
+        let oldId = oldData.mid;
+        oldData.mid = newData.mid;
         this.firebaseClient.saveData(newData);
-        // this.baqendClient.saveData(newData);
+        this.baqendClient.updateData(oldId);
+        this.baqendClient.saveData(newData);
       }
     }, 1000);
   }

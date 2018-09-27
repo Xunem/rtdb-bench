@@ -14,6 +14,7 @@ export class ServerClient {
     this.initial = true;
     this.serverid = serverid;
     this.limit = 25;
+    this.drawOffset = 30;
     this.serverData = new Map();
     this.temp = {};
     controls.getServerId().subscribe((value) => {
@@ -63,60 +64,131 @@ export class ServerClient {
     let dataArray = Array.from(this.serverData, ([key, value]) => value);
     let width = this.anctx.canvas.width;
     let height = this.anctx.canvas.height;
-    let spacing = Math.floor((width-20)/(this.limit-1));
+    let offset = this.drawOffset;
+    let spacing = Math.floor((width-2*offset)/(this.limit-1));
     dataArray.sort(function(a, b) {
       return b.ts - a.ts;
     });
+    let quarters = Math.floor((this.anctx.canvas.height - (offset *2))/4);
+
     this.anctx.beginPath();
-    this.anctx.moveTo(0, 75);
-    this.anctx.lineTo(width, 75);
+    this.anctx.arc(Math.floor((1/3)*width)-10,
+        height-offset/2,
+        4, 0, 2*Math.PI);
+    this.anctx.strokeStyle = '#ff9d00';
+    this.anctx.fillStyle = '#ff9d00';
+    this.anctx.fill();
+    this.anctx.stroke();
+
+    this.anctx.beginPath();
+    this.anctx.arc(Math.floor((2/3)*width)-10,
+        height-offset/2,
+        4, 0, 2*Math.PI);
+    this.anctx.strokeStyle = '#0007d3';
+    this.anctx.fillStyle = '#0007d3';
+    this.anctx.fill();
+    this.anctx.stroke();
+    this.anctx.beginPath();
+    this.anctx.fillStyle = '#0007d3';
+    this.anctx.textAlign = 'left';
+    this.anctx.font = 'bolder 16px Arial';
+    this.anctx.fillText('CPU',
+        Math.floor((2/3)*width), (height-offset/2)+5);
+
+    this.anctx.beginPath();
+    this.anctx.fillStyle = '#ff9d00';
+    this.anctx.fillText('Temperature',
+        Math.floor((1/3)*width), (height-offset/2)+5);
+    this.anctx.beginPath();
+    this.anctx.moveTo(offset, offset);
+    this.anctx.lineTo(width-offset, offset);
     this.anctx.lineWidth = 1;
     this.anctx.strokeStyle = '#bababa';
     this.anctx.stroke();
     this.anctx.beginPath();
-    this.anctx.moveTo(0, 150);
-    this.anctx.lineTo(width, 150);
+    this.anctx.moveTo(offset, offset + quarters);
+    this.anctx.lineTo(width-offset, offset + quarters);
     this.anctx.stroke();
     this.anctx.beginPath();
-    this.anctx.moveTo(0, 225);
-    this.anctx.lineTo(width, 225);
+    this.anctx.moveTo(offset, offset + quarters * 2);
+    this.anctx.lineTo(width-offset, offset + quarters * 2);
     this.anctx.stroke();
-    for (let i = 0; i<dataArray.length; i++) {
-      if (i>0) {
+    this.anctx.beginPath();
+    this.anctx.moveTo(offset, offset + quarters * 3);
+    this.anctx.lineTo(width-offset, offset + quarters * 3);
+    this.anctx.stroke();
+    this.anctx.beginPath();
+    this.anctx.moveTo(offset, offset + quarters * 4);
+    this.anctx.lineTo(width-offset, offset + quarters * 4);
+    this.anctx.stroke();
+    this.anctx.beginPath();
+    this.anctx.moveTo(width-offset, offset);
+    this.anctx.lineTo(width-offset, offset + quarters * 4);
+    this.anctx.stroke();
+    this.anctx.beginPath();
+    this.anctx.moveTo(offset, offset);
+    this.anctx.lineTo(offset, offset + quarters * 4);
+    this.anctx.stroke();
+    if (this.serverData.size>0) {
+      for (let i = 0; i<dataArray.length; i++) {
+        if (i>0) {
+          this.anctx.beginPath();
+          this.anctx.moveTo(width-offset-(i-1)*spacing,
+              this.calcY(dataArray[i-1].temp));
+          this.anctx.lineWidth = 2;
+          this.anctx.strokeStyle = '#ff9d00';
+          this.anctx.lineTo(width-offset-i*spacing,
+              this.calcY(dataArray[i].temp));
+          this.anctx.stroke();
+          this.anctx.beginPath();
+          this.anctx.moveTo(width-offset-(i-1)*spacing,
+              this.calcY(dataArray[i-1].cpu));
+          this.anctx.lineWidth = 2;
+          this.anctx.strokeStyle = '#0007d3';
+          this.anctx.lineTo(width-offset-i*spacing,
+              this.calcY(dataArray[i].cpu));
+          this.anctx.stroke();
+        }
         this.anctx.beginPath();
-        this.anctx.moveTo(width-10-(i-1)*spacing,
-            height-(Math.floor(dataArray[i-1].temp)*3));
-        this.anctx.lineWidth = 2;
+        this.anctx.arc(width-offset-i*spacing,
+            this.calcY(dataArray[i].temp),
+            4, 0, 2*Math.PI);
         this.anctx.strokeStyle = '#ff9d00';
-        this.anctx.lineTo(width-10-i*spacing,
-            height-(Math.floor(dataArray[i].temp)*3));
+        this.anctx.fillStyle = '#ff9d00';
+        this.anctx.fill();
         this.anctx.stroke();
         this.anctx.beginPath();
-        this.anctx.moveTo(width-10-(i-1)*spacing,
-            height-(Math.floor(dataArray[i-1].cpu)*3));
-        this.anctx.lineWidth = 2;
+        this.anctx.arc(width-offset-i*spacing,
+            this.calcY(dataArray[i].cpu),
+            4, 0, 2*Math.PI);
         this.anctx.strokeStyle = '#0007d3';
-        this.anctx.lineTo(width-10-i*spacing,
-            height-(Math.floor(dataArray[i].cpu)*3));
+        this.anctx.fillStyle = '#0007d3';
+        this.anctx.fill();
         this.anctx.stroke();
       }
+    } else {
       this.anctx.beginPath();
-      this.anctx.arc(width-10-i*spacing,
-          height-(Math.floor(dataArray[i].temp)*3),
-          4, 0, 2*Math.PI);
-      this.anctx.strokeStyle = '#ff9d00';
-      this.anctx.fillStyle = '#ff9d00';
-      this.anctx.fill();
-      this.anctx.stroke();
-      this.anctx.beginPath();
-      this.anctx.arc(width-10-i*spacing,
-          height-(Math.floor(dataArray[i].cpu)*3),
-          4, 0, 2*Math.PI);
-      this.anctx.strokeStyle = '#0007d3';
-      this.anctx.fillStyle = '#0007d3';
-      this.anctx.fill();
-      this.anctx.stroke();
+      this.anctx.fillStyle = 'rgba(198, 198, 198, 0.9)';
+      this.anctx.fillRect(0, 0,
+          this.anctx.canvas.width, this.anctx.canvas.height);
+      this.anctx.fillStyle = 'BLACK';
+      this.anctx.textAlign = 'center';
+      this.anctx.font = 'bolder 30px Arial';
+      this.anctx.fillText('No Data',
+          Math.floor(this.anctx.canvas.width/2),
+          Math.floor(this.anctx.canvas.height/2));
     }
+  }
+  /**
+   *
+   * @param {Number} value
+   * @return {Number}
+   */
+  calcY(value) {
+    let area = this.anctx.canvas.height-this.drawOffset*2;
+    let perc = area/100;
+    let y = Math.floor(perc*value);
+    return this.drawOffset+(area-y);
   }
   /**
    * Delegates the events to the appropriate Function

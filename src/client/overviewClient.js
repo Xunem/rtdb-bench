@@ -1,5 +1,5 @@
 import {Dbinterface, PROV_BAQEND, QUERY_ALL,
-  QUERY_DUALRANGE, QUERY_SINGLERANGE, PROV_FIREBASE}
+  QUERY_DUALRANGE, PROV_FIREBASE}
   from '../db-interface/dbinterface.js';
 import {MIN_TEMP, MAX_TEMP, MIN_CPU, MAX_CPU} from '../controls/controls.js';
 
@@ -365,30 +365,32 @@ export class OverviewClient {
           this.subscription.unsubscribe();
           this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
               {
-                minTemp: this.minTempLine,
-                maxTemp: this.maxTempLine,
-                minCpu: this.minCpuLine,
-                maxCpu: this.maxCpuLine,
+                minTemp: this.minTemp,
+                maxTemp: this.maxTemp,
+                minCpu: this.minCpu,
+                maxCpu: this.maxCpu,
               });
           this.subscribe();
           this.redraw();
         } else if (tempChanged && !cpuChanged) {
           this.subscription.unsubscribe();
-          this.Dbinterface = new Dbinterface(this.provider, QUERY_SINGLERANGE,
+          this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
               {
-                range: 'temp',
-                minTemp: this.minTempLine,
-                maxTemp: this.maxTempLine,
+                minTemp: this.minTemp,
+                maxTemp: this.maxTemp,
+                minCpu: this.minCpu,
+                maxCpu: this.maxCpu,
               });
           this.subscribe();
           this.redraw();
         } else if (!tempChanged && cpuChanged) {
           this.subscription.unsubscribe();
-          this.Dbinterface = new Dbinterface(this.provider, QUERY_SINGLERANGE,
+          this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
               {
-                range: 'cpu',
-                minTemp: this.minCpuLine,
-                maxTemp: this.maxCpuLine,
+                minTemp: this.minTemp,
+                maxTemp: this.maxTemp,
+                minCpu: this.minCpu,
+                maxCpu: this.maxCpu,
               });
           this.subscribe();
           this.redraw();
