@@ -25,14 +25,24 @@ export class Controls {
     this.roomNumber = new BehaviorSubject();
     this.roomNumber.next(1);
     this.serverId = new BehaviorSubject();
+    this.serverId.subscribe((serverId) => {
+      this.current = serverId;
+    });
     this.serverLimit = new BehaviorSubject();
     this.serverLimit.next(15);
+    this.serverOffset = new BehaviorSubject();
   }
   /**
-   * @return {BehaviorSubject} Number of Measurements to be shown
+   * @return {BehaviorSubject} Number of last Measurements to be shown
    */
-  getLimit() {
+  getServerLimit() {
     return this.serverLimit;
+  }
+  /**
+   * @return {BehaviorSubject} Number of last Measurements to be skipped
+   */
+  getServerOffset() {
+    return this.serverOffset;
   }
   /**
    * @return {BehaviorSubject} ID of Server which to be
@@ -85,5 +95,14 @@ export class Controls {
    */
   getMaxCpu() {
     return this.maxCpu;
+  }
+  /**
+   *
+   * @param {string} id
+   */
+  setIfNotCurrent(id) {
+    if (id !== this.current) {
+      this.serverId.next(id);
+    }
   }
 }

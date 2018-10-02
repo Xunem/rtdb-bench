@@ -15,7 +15,7 @@
     <div id="Controls">
       <div id="genControl">
         <div id="genButtons">
-          <button id="init">Step</button>
+          <button id="step">Step</button>
           <button id="start">Start inserting</button>
           <button id="stop">Stop inserting</button>
           <button id="reset">Reset</button>
@@ -60,11 +60,15 @@
       </div>
       <div id="srvControl" class="subControl">
         <div id="hottestSrv">
+          <span>Automatically show hottest Server</span>
           <label class="switch">
             <input type="checkbox" id="hottest">
             <span class="slider round"></span>
           </label>
-          <span>Automatically show hottest Server</span>
+        </div>
+        <div class="limit">
+          <span>Number of Measurements per Site</span>
+          <input type="number" min="0" max="500" step="1"  value="15" id="limit">
         </div>
       </div>
       
@@ -73,30 +77,43 @@
     </div>
     <div id="Clients">
       <div id="overview" class="client">
-        <span id="overview_details">Overview</span>
-        <div id="overview_baqend">
+        <span id="overview_details" class="details">Overview</span>
+        <span id="overview_sql" class="sql"></span>
+        <div id="overview_baqend" class="client_ba">
           <canvas id="ov_ba_cvs" width="400" height="300"></canvas>
+          <span id="latency_ov_ba" class="latency">&Oslash; - ms</span>
         </div>
-        <div id="overview_firebase">
+        <div id="overview_firebase" class="client_fb">
           <canvas id="ov_fb_cvs" width="400" height="300"></canvas>
+          <span id="latency_ov_fb" class="latency">&Oslash; - ms</span>
         </div>
       </div>
       <div id="room" class="client">
-        <span id="room_details">Room</span>
-        <div id="room_baqend">
+        <span id="room_details" class="details">Room</span>
+        <span id="room_sql" class="sql"></span>
+        <div id="room_baqend" class="client_ba">
           <canvas id="rm_ba_cvs" width="400" height="300"></canvas>
+          <span id="latency_rm_ba" class="latency">&Oslash; - ms</span>
         </div>
-        <div id="room_firebase">
+        <div id="room_firebase" class="client_fb">
           <canvas id="rm_fb_cvs" width="400" height="300"></canvas>
+          <span id="latency_rm_fb" class="latency">&Oslash; - ms</span>
         </div>
       </div>
       <div id="server" class="client">
-        <span id="server_details">No Server selected</span>
-        <div id="server_baqend">
+        <span id="server_details" class="details">No Server selected</span>
+        <span id="server_sql" class="sql"></span>
+        <div id="server_baqend" class="client_ba">
+          <button id="srv_ba_left" class="btn_srv btn_left" disabled>&#9664</button>
           <canvas id="srv_ba_cvs" width="400" height="300"></canvas>
+          <button id="srv_ba_right" class="btn_srv btn_right" disabled>&#9654</button>
+          <span id="latency_srv_ba" class="latency">&Oslash; - ms</span>
         </div>
-        <div id="server_baqend">
+        <div id="server_firebase" class="client_fb">
+          <button id="srv_fb_left" class="btn_srv btn_left" disabled>&#9664</button>
           <canvas id="srv_fb_cvs" width="400" height="300"></canvas>
+          <button id="srv_fb_right" class="btn_srv btn_right" disabled>&#9654</button>
+          <span id="latency_srv_fb" class="latency">&Oslash; - ms</span>
         </div>
       </div>
     </div>

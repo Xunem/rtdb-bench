@@ -83,7 +83,7 @@ input:checked + .slider:before {
   margin:30px auto;
 }
 #hottestSrv {
-  margin:30px auto;
+  padding:20px;
   width: 300px;
   display:block;
   font-weight:bold;
@@ -100,7 +100,7 @@ input:checked + .slider:before {
   float:left;
   border:2px solid black;
 }
-.client span{
+.details {
   display:block;
   width:100%;
   background-color:black;
@@ -136,6 +136,7 @@ input:checked + .slider:before {
   background-color: white;
   font-weight: bold;
   transition: opacity 0.1s ease-in;
+  z-index:99;
 }
 #ToolTip:hover{
   display:none!important;
@@ -184,4 +185,68 @@ input:checked + .slider:before {
   float:right;
   height:26px;
   margin-right:20px;
+}
+
+.limit{
+  font-weight:bolder;
+  padding:20px;
+}
+
+#server canvas{
+  float:left;
+  border:none;
+}
+
+.client_ba{
+  width:400px;
+  height:300px;
+  position: relative;
+}
+
+.client_fb{
+  width:400px;
+  height:300px;
+  position: relative;
+}
+
+.btn_srv {
+  position:absolute;
+  border:none;
+  display:block;
+  background-color:transparent;
+  height:300px;
+  width:30px;
+}
+.btn_srv:hover{
+  background-color: rgba(203, 203, 203, 0.8);
+  cursor:pointer;
+}
+.btn_srv:disabled{
+  background-color:transparent;
+  background-image: none;
+  cursor:default;
+}
+.btn_left{
+  left:0;
+}
+
+.btn_right{
+  right:0;
+}
+
+.sql{
+  display:block;
+  padding:20px;
+  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+
+.latency{
+  display:block;
+  padding: 5px 10px;
+  color:white;
+  background-color: rgba(0, 0, 0, 0.8);
+  position:absolute;
+  right:0;
+  bottom:0;
+  z-index:50;
 }

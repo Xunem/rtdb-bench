@@ -8,15 +8,38 @@ import {Controls} from './src/controls/controls.js';
 import 'nouislider';
 
 let room = 1;
-initConnections.then((client) => {
+initConnections.then((instances) => {
+  const producer = new Producer(instances, 3);
+  document.getElementById('step').addEventListener('click', () => {
+    producer.step();
+  });
+  document.getElementById('start').addEventListener('click', () => {
+    producer.start();
+  });
+  document.getElementById('stop').addEventListener('click', () => {
+    producer.stop();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    producer.reset();
+  });
+});
+
+initConnections.then((instances) => {
+  const firebaseClient = instances.fb;
+  const baqendClient = instances.ba;
   const controls = new Controls();
-  const producer = new Producer(3);
-  const overviewClientBa = new OverviewClient(controls, PROV_BAQEND);
-  const overviewClientFb = new OverviewClient(controls, PROV_FIREBASE);
-  const roomClientBa = new RoomClient(controls, PROV_BAQEND);
-  const roomClientFb = new RoomClient(controls, PROV_FIREBASE);
-  const serverClientBa = new ServerClient(controls, PROV_BAQEND, 'r2r2u0');
-  const serverClientFb = new ServerClient(controls, PROV_FIREBASE, 'r2r2u0');
+  const overviewClientBa = new OverviewClient(
+      controls, PROV_BAQEND, baqendClient);
+  const overviewClientFb = new OverviewClient(
+      controls, PROV_FIREBASE, firebaseClient);
+  const roomClientBa = new RoomClient(
+      controls, PROV_BAQEND, baqendClient);
+  const roomClientFb = new RoomClient(
+      controls, PROV_FIREBASE, firebaseClient);
+  const serverClientBa = new ServerClient(
+      controls, PROV_BAQEND, baqendClient, 'r2r2u0');
+  const serverClientFb = new ServerClient(
+      controls, PROV_FIREBASE, firebaseClient, 'r2r2u0');
   overviewClientBa.init();
   overviewClientFb.init();
   roomClientBa.init();
@@ -41,11 +64,9 @@ initConnections.then((client) => {
     let value = values[handle];
     if (handle) {
       controls.getMaxTemp().next(value);
-      console.log('v'+value);
       maxTemp.value = value;
     } else {
       controls.getMinTemp().next(value);
-      console.log('v'+value);
       minTemp.value = value;
     }
   });
@@ -87,18 +108,6 @@ initConnections.then((client) => {
     overviewClientFb.updateFilter();
   });
 
-  document.getElementById('init').addEventListener('click', () => {
-    producer.setup();
-  });
-  document.getElementById('start').addEventListener('click', () => {
-    producer.start();
-  });
-  document.getElementById('stop').addEventListener('click', () => {
-    producer.stop();
-  });
-  document.getElementById('reset').addEventListener('click', () => {
-    producer.reset();
-  });
   document.getElementById('hottest').addEventListener('change', () => {
     let hotmode = document.getElementById('hottest').checked;
     controls.getHottestServer().next(hotmode);
@@ -112,5 +121,10 @@ initConnections.then((client) => {
       room = roomSelect.value;
       controls.getRoomNumber().next(room);
     }
+  });
+
+  let limit = document.getElementById('limit');
+  limit.addEventListener('change', () => {
+    controls.getServerLimit().next(parseInt(limit.value));
   });
 });

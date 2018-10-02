@@ -6,12 +6,15 @@ import {v4 as uuidv4} from 'uuid';
  */
 export class Producer {
   /**
+   * @param {*} instances
    * @param {number} insertRate - How many Events should be transmitted
    * to the server per Second
    */
-  constructor(insertRate) {
-    this.firebaseClient = new Dbinterface(PROV_FIREBASE, INSERT, {});
-    this.baqendClient = new Dbinterface(PROV_BAQEND, INSERT, {});
+  constructor(instances, insertRate) {
+    this.firebaseClient = new Dbinterface(
+        PROV_FIREBASE, instances.fb, INSERT, {});
+    this.baqendClient = new Dbinterface(
+        PROV_BAQEND, instances.ba, INSERT, {});
     this.insertRate = insertRate;
     this.servers = [];
     this.serverCount;
@@ -55,50 +58,53 @@ export class Producer {
     }
     this.initial = false;
   }
-
   /** */
-  start() {
+  step() {
     if (this.initial) {
       this.setup();
       this.initial = false;
     }
-    this.refreshIntervalId = setInterval(() =>{
-      for (let i = 0; i < this.insertRate; i++) {
-        let oldData = this.servers[this.counter];
-        let newData = {
-          mid: uuidv4(),
-          sid: oldData.sid,
-          room: oldData.room,
-          rack: oldData.rack,
-          unit: oldData.unit,
-          os: oldData.os,
-        };
-        let prob = Math.random()*100;
-        let dir = Math.floor(prob)%2;
-        if (prob<80) {
-          if (dir == 0) {
-            oldData.temp = Math.min(oldData.temp + (prob/100), 90);
-          } else {
-            oldData.temp = Math.max(oldData.temp - (prob/100), 25);
-          }
+    for (let i = 0; i < this.insertRate; i++) {
+      let oldData = this.servers[this.counter];
+      let newData = {
+        mid: uuidv4(),
+        sid: oldData.sid,
+        room: oldData.room,
+        rack: oldData.rack,
+        unit: oldData.unit,
+        os: oldData.os,
+      };
+      let prob = Math.random()*100;
+      let dir = Math.floor(prob)%2;
+      if (prob<80) {
+        if (dir == 0) {
+          oldData.temp = Math.min(oldData.temp + (prob/100), 90);
         } else {
-          if (dir == 0) {
-            oldData.temp = Math.min(oldData.temp + (prob%10), 90);
-          } else {
-            oldData.temp = Math.max(oldData.temp - (prob%10), 25);
-          }
+          oldData.temp = Math.max(oldData.temp - (prob/100), 25);
         }
-        newData.temp = oldData.temp;
-        newData.cpu = oldData.cpu;
-        newData.ts = Date.now();
-        newData.live = true;
-        this.counter = (this.counter+1)%this.serverCount;
-        let oldId = oldData.mid;
-        oldData.mid = newData.mid;
-        this.firebaseClient.saveData(newData);
-        this.baqendClient.updateData(oldId);
-        this.baqendClient.saveData(newData);
+      } else {
+        if (dir == 0) {
+          oldData.temp = Math.min(oldData.temp + (prob%10), 90);
+        } else {
+          oldData.temp = Math.max(oldData.temp - (prob%10), 25);
+        }
       }
+      newData.temp = oldData.temp;
+      newData.cpu = oldData.cpu;
+      newData.ts = Date.now();
+      newData.live = true;
+      this.counter = (this.counter+1)%this.serverCount;
+      let oldId = oldData.mid;
+      oldData.mid = newData.mid;
+      this.firebaseClient.saveData(newData);
+      this.baqendClient.updateData(oldId);
+      this.baqendClient.saveData(newData);
+    }
+  }
+  /** */
+  start() {
+    this.refreshIntervalId = setInterval(() =>{
+      this.step();
     }, 1000);
   }
   /** */
@@ -111,6 +117,8 @@ export class Producer {
   reset() {
     this.baqendClient.deleteAll();
     this.firebaseClient.deleteAll();
+    this.servers = [];
+    this.counter = 0;
     this.initial = true;
   }
 }

@@ -1,5 +1,4 @@
-import {Dbinterface, PROV_BAQEND, QUERY_ALL,
-  QUERY_DUALRANGE, PROV_FIREBASE}
+import {Dbinterface, PROV_BAQEND, PROV_FIREBASE, QUERY_ALL}
   from '../db-interface/dbinterface.js';
 import {MIN_TEMP, MAX_TEMP, MIN_CPU, MAX_CPU} from '../controls/controls.js';
 
@@ -8,11 +7,12 @@ export class OverviewClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
    * @param {Number} provider - Provider of Data-Access
+   * @param {*} dbinstance - Database-connector
    */
-  constructor(controls, provider) {
-    this.sql = 'SELECT * FROM ServerData ORDER_BY Timestamp DESC LIMIT 40';
+  constructor(controls, provider, dbinstance) {
     this.provider = provider;
     this.controls = controls;
+    this.dbinstance = dbinstance;
     this.serverDisplay = new Map();
     this.errorMsg = 'No Data';
     this.hover = '';
@@ -28,7 +28,8 @@ export class OverviewClient {
     this.maxCpu = 100;
     this.maxCpuLine = '';
     this.serverData = new Map();
-    this.Dbinterface = new Dbinterface(provider, QUERY_ALL, {});
+    this.Dbinterface = new Dbinterface(provider, dbinstance, QUERY_ALL, {});
+    this.initial = true;
     this.hotMode = true;
   };
   /** */
@@ -36,14 +37,19 @@ export class OverviewClient {
     // Initialising DOM-Elements
     if (this.provider == PROV_BAQEND) {
       this.ctx = document.getElementById('ov_ba_cvs').getContext('2d');
+      this.latency = document.getElementById('latency_ov_ba');
     } else if (this.provider == PROV_FIREBASE) {
       this.ctx = document.getElementById('ov_fb_cvs').getContext('2d');
+      this.latency = document.getElementById('latency_ov_fb');
     }
     this.cvs = this.ctx.canvas;
     this.toolTip = document.getElementById('ToolTip');
 
     // Subscription for initial Query
-    this.subscribe();
+    this.Dbinterface.getLatency().subscribe((value) => {
+      this.latency.innerHTML = '&Oslash; '+Math.round(value)+' ms';
+    });
+    this.setSubscription();
 
     // Subscriptions for Min and Max Range from Controlsection
     this.controls.getMinTemp().subscribe((value) => {
@@ -66,7 +72,6 @@ export class OverviewClient {
     });
     this.controls.getMinCpu().subscribe((value) => {
       let newValue = Math.floor(value);
-      console.log('new '+newValue);
       if (newValue != this.minCpu) {
         this.minCpuLine = newValue;
       } else {
@@ -94,6 +99,9 @@ export class OverviewClient {
         let x = e.clientX - r.left;
         let y = e.clientY - r.top;
         let dataArray = Array.from(this.serverDisplay, ([key, value]) => value);
+        dataArray.sort(function(a, b) {
+          return a.cpu - b.cpu;
+        });
         let tempHover = '';
         for (let i = 0; i<dataArray.length; i++) {
           let dataX = this.getDisplayPositionX(dataArray[i].cpu);
@@ -129,7 +137,7 @@ export class OverviewClient {
     this.cvs.addEventListener('click', (e) => {
       if (this.hover) {
         this.controls.getHottestServer().next(false);
-        this.controls.getServerId().next(this.hover);
+        this.controls.setIfNotCurrent(this.hover);
       }
     });
     this.cvs.addEventListener('mouseout', () => {
@@ -141,12 +149,12 @@ export class OverviewClient {
 
     // Painting the Canvas for the first time
     this.redraw();
+    this.setDetails();
   }
   /**
    * Subscribes to the selected Query
    */
   subscribe() {
-    console.log(this.provider + ' subscribed');
     this.errorMsg = 'No Data';
     this.serverDisplay = new Map();
     this.serverData = new Map();
@@ -154,9 +162,19 @@ export class OverviewClient {
     this.maxTempLine = '';
     this.minCpuLine = '';
     this.maxCpuLine = '';
-    this.subscription = this.Dbinterface.doQuery().subscribe(
+    this.redraw();
+    this.setDetails();
+    this.subscription = this.subquery.subscribe(
         (x) => this.handleEvent(x),
-        (e) => console.log('onError: %s', JSON.stringify(e)),
+        (e) => {
+          console.log('Error in Overviewclient: %s',
+              JSON.stringify(e));
+          this.subscription.unsubscribe();
+          this.serverData = new Map();
+          this.serverDisplay = new Map();
+          this.redraw();
+          this.setSubscription();
+        },
         () => console.log('onCompleted'));
   }
   /**
@@ -263,6 +281,9 @@ export class OverviewClient {
 
       // Drawing Points for currrent Servermeasurements
       let dataArray = Array.from(this.serverData, ([key, value]) => value);
+      dataArray.sort(function(a, b) {
+        return a.cpu - b.cpu;
+      });
       for (let i = 0; i<dataArray.length; i++) {
         this.ctx.beginPath();
         let width = 10;
@@ -340,69 +361,88 @@ export class OverviewClient {
       }
     }
     if (this.hotMode) {
-      this.controls.getServerId().next(hottestId);
+      this.controls.setIfNotCurrent(hottestId);
     }
   }
   /**
-   * Updates the Filterrange and executes the according new query
+   * Updates the Filterrange
    */
   updateFilter() {
-    let tempChanged = (this.minTempLine || this.maxTempLine);
-    let cpuChanged = (this.minCpuLine || this.maxCpuLine);
+    this.tempChanged = (this.minTempLine || this.maxTempLine);
+    this.cpuChanged = (this.minCpuLine || this.maxCpuLine);
     this.minTemp = (this.minTempLine) ? this.minTempLine : this.minTemp;
     this.maxTemp = (this.maxTempLine) ? this.maxTempLine : this.maxTemp;
     this.minCpu = (this.minCpuLine) ? this.minCpuLine : this.minCpu;
     this.maxCpu = (this.maxCpuLine) ? this.maxCpuLine : this.maxCpu;
-    if (this.minTemp == MIN_TEMP && this.maxTemp == MAX_TEMP
-      && this.minCpu == MIN_CPU && this.maxCpu == MAX_CPU) {
-      this.subscription.unsubscribe();
-      this.Dbinterface = new Dbinterface(this.provider, QUERY_ALL, {});
-      this.subscribe();
-      this.redraw();
-    } else {
-      try {
-        if (tempChanged && cpuChanged) {
+
+    this.setSubscription();
+  }
+  /**
+   * Updates Query according to Filterrange
+   */
+  setSubscription() {
+    try {
+      if (this.minTemp == MIN_TEMP && this.maxTemp == MAX_TEMP
+        && this.minCpu == MIN_CPU && this.maxCpu == MAX_CPU) {
+        // no Range applied
+        if (this.initial) {
+          this.subquery = this.Dbinterface.doQuery();
+          this.initial = false;
+        } else {
           this.subscription.unsubscribe();
-          this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
-              {
-                minTemp: this.minTemp,
-                maxTemp: this.maxTemp,
-                minCpu: this.minCpu,
-                maxCpu: this.maxCpu,
-              });
-          this.subscribe();
-          this.redraw();
-        } else if (tempChanged && !cpuChanged) {
+          this.subquery = this.Dbinterface.updateQuery({});
+        }
+        this.subscribe();
+      } else {
+        if (this.tempChanged || this.cpuChanged) {
           this.subscription.unsubscribe();
-          this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
-              {
-                minTemp: this.minTemp,
-                maxTemp: this.maxTemp,
-                minCpu: this.minCpu,
-                maxCpu: this.maxCpu,
-              });
+          this.subquery = this.Dbinterface.updateQuery({
+            range: true,
+            minTemp: this.minTemp,
+            maxTemp: this.maxTemp,
+            minCpu: this.minCpu,
+            maxCpu: this.maxCpu,
+          });
           this.subscribe();
-          this.redraw();
-        } else if (!tempChanged && cpuChanged) {
-          this.subscription.unsubscribe();
-          this.Dbinterface = new Dbinterface(this.provider, QUERY_DUALRANGE,
-              {
-                minTemp: this.minTemp,
-                maxTemp: this.maxTemp,
-                minCpu: this.minCpu,
-                maxCpu: this.maxCpu,
-              });
-          this.subscribe();
-          this.redraw();
         } else {
           console.log('Range not changed.');
         }
-      } catch (err) {
-        this.errorMsg = err.message;
-        this.subscription.unsubscribe();
-        this.serverData = new Map();
-        this.redraw();
       }
+    } catch (err) {
+      this.errorMsg = err.message;
+      console.log(err);
+      this.subscription.unsubscribe();
+      this.serverData = new Map();
+      this.serverDisplay = new Map();
+      this.redraw();
+      this.setDetails();
     }
+  }
+  /**
+   *
+   */
+  setDetails() {
+    document.getElementById('overview_sql').innerHTML = this.getSQLString();
+  }
+  /**
+   * @return {string} sql
+   */
+  getSQLString() {
+    let sql = 'SELECT * FROM ServerData<br>'
+        + 'WHERE Live = true<br>';
+
+    if (this.minTemp != MIN_TEMP) {
+      sql = sql + '\xa0\xa0AND Temperature > '+this.minTemp+'<br>';
+    }
+    if (this.maxTemp != MAX_TEMP) {
+      sql = sql + '\xa0\xa0AND Temperature < '+this.maxTemp+'<br>';
+    }
+    if (this.minCpu != MIN_CPU) {
+      sql = sql + '\xa0\xa0AND CPU > '+this.minCpu+'<br>';
+    }
+    if (this.maxCpu != MAX_CPU) {
+      sql = sql + '\xa0\xa0AND CPU < '+this.maxCpu+'<br>';
+    }
+    return sql;
   }
 }

@@ -7,10 +7,12 @@ export class RoomClient {
    * @param {Controls} controls - Controls-Object for sharing settings
    * @param {Number} provider - The Provider which should be used for
    * Data-Access
+   * @param {*} dbinstance - Database-connector
    */
-  constructor(controls, provider) {
+  constructor(controls, provider, dbinstance) {
     this.controls = controls;
     this.provider = provider;
+    this.dbinstance = dbinstance;
     this.racks = 4;
     this.units = 5;
     this.hover = '';
@@ -20,29 +22,6 @@ export class RoomClient {
     this.room = '';
     this.sql = 'SELECT * FROM ServerData WHERE Room='
       +this.room+' ORDER_BY Timestamp DESC LIMIT 20';
-    controls.getRoomNumber().subscribe((value) => {
-      this.room = value;
-      this.setDetails();
-      if (this.initial) {
-        this.Dbinterface = new Dbinterface(this.provider, QUERY_SERVERROOM, {
-          room: parseInt(value),
-        });
-        this.subscription = this.Dbinterface.doQuery().subscribe(
-            (x) => this.handleEvent(x),
-            (e) => console.log('Room, onError: %s', JSON.stringify(e)),
-            () => console.log('onCompleted'));
-        this.initial = false;
-      } else {
-        this.subscription.unsubscribe();
-        this.serverData = new Map();
-        this.subscription = this.Dbinterface.updateQuery({
-          room: parseInt(value),
-        }).subscribe(
-            (x) => this.handleEvent(x),
-            (e) => console.log('Room, onError: %s', JSON.stringify(e)),
-            () => console.log('onCompleted'));
-      }
-    });
   };
   /**
    * Initialising the canvas and adding capabilities
@@ -52,18 +31,41 @@ export class RoomClient {
     let cvs;
     if (this.provider == PROV_BAQEND) {
       cvs = document.getElementById('rm_ba_cvs');
+      this.latency = document.getElementById('latency_rm_ba');
     } else if (this.provider == PROV_FIREBASE) {
       cvs = document.getElementById('rm_fb_cvs');
+      this.latency = document.getElementById('latency_rm_fb');
     }
-    this.anctx = cvs.getContext('2d');
+
+    this.controls.getRoomNumber().subscribe((value) => {
+      this.room = parseInt(value);
+      this.setDetails();
+      if (this.initial) {
+        this.Dbinterface = new Dbinterface(this.provider,
+            this.dbinstance, QUERY_SERVERROOM, {
+              room: this.room,
+            });
+        this.Dbinterface.getLatency().subscribe((value) => {
+          this.latency.innerHTML = '&Oslash; '+Math.round(value)+' ms';
+        });
+        this.subscribe(this.initial);
+        this.initial = false;
+      } else {
+        this.subscription.unsubscribe();
+        this.serverData = new Map();
+        this.subscribe(false);
+      }
+    });
+
+    this.ctx = cvs.getContext('2d');
     this.toolTip = document.getElementById('ToolTip');
     this.redraw();
     // Adding Eventlisteners for mouseover effects and tooltip on the canvas
     cvs.addEventListener('mousemove', (e) => {
       if (this.serverData.size > 0) {
         let r = cvs.getBoundingClientRect();
-        let width = this.anctx.canvas.width;
-        let height = this.anctx.canvas.height;
+        let width = this.ctx.canvas.width;
+        let height = this.ctx.canvas.height;
         let spacingHeight = Math.floor((height-60)/this.units);
         let spacingWidth = Math.floor((width-20)/this.racks);
         let x = e.clientX - r.left;
@@ -118,7 +120,7 @@ export class RoomClient {
     cvs.addEventListener('click', (e) => {
       if (this.hover) {
         this.controls.getHottestServer().next(false);
-        this.controls.getServerId().next(this.hover);
+        this.controls.setIfNotCurrent(this.hover);
       }
     });
     cvs.addEventListener('mouseout', () => {
@@ -133,75 +135,75 @@ export class RoomClient {
    * cpu visualisation
    */
   redraw() {
-    this.anctx.clearRect(0, 0,
-        this.anctx.canvas.width, this.anctx.canvas.height); // Clears the canvas
-    let width = this.anctx.canvas.width;
-    let height = this.anctx.canvas.height;
+    this.ctx.clearRect(0, 0,
+        this.ctx.canvas.width, this.ctx.canvas.height); // Clears the canvas
+    let width = this.ctx.canvas.width;
+    let height = this.ctx.canvas.height;
     let spacingHeight = Math.floor((height-60)/this.units);
     let spacingWidth = Math.floor((width-20)/this.racks);
     for (let i = 0; i<this.racks; i++) {
       for (let j = 0; j<this.units; j++) {
-        this.anctx.beginPath();
-        this.anctx.moveTo(
+        this.ctx.beginPath();
+        this.ctx.moveTo(
             10 + Math.floor(spacingWidth)*i,
             30 + spacingHeight*j
         );
-        this.anctx.lineTo(
+        this.ctx.lineTo(
             10 + Math.floor(spacingWidth)*i,
             30 + spacingHeight*(j+1)
         );
-        this.anctx.lineTo(
+        this.ctx.lineTo(
             10 + Math.floor(spacingWidth*0.1) + Math.floor(spacingWidth)*i,
             30 + spacingHeight*(j+1) + Math.floor(spacingHeight*0.2)
         );
-        this.anctx.lineTo(
+        this.ctx.lineTo(
             10 + spacingWidth*i + Math.floor(spacingWidth*0.9),
             30 + spacingHeight*(j+1) + Math.floor(spacingHeight*0.2)
         );
-        this.anctx.stroke();
+        this.ctx.stroke();
       }
-      this.anctx.lineTo(
+      this.ctx.lineTo(
           10 + spacingWidth*i + Math.floor(spacingWidth*0.9),
           30 + Math.floor(spacingHeight*0.2)
       );
-      this.anctx.lineTo(
+      this.ctx.lineTo(
           10 + spacingWidth*i + Math.floor(spacingWidth*0.9)
           - Math.floor(spacingWidth*0.1),
           30
       );
-      this.anctx.lineTo(
+      this.ctx.lineTo(
           10 + Math.floor(spacingWidth)*i,
           30
       );
-      this.anctx.fillStyle = 'rgba(198, 198, 198, 0.7)';
-      this.anctx.fill();
-      this.anctx.stroke();
-      this.anctx.lineTo(
+      this.ctx.fillStyle = 'rgba(198, 198, 198, 0.7)';
+      this.ctx.fill();
+      this.ctx.stroke();
+      this.ctx.lineTo(
           10 + Math.floor(spacingWidth*0.1) + Math.floor(spacingWidth)*i,
           30 + Math.floor(spacingHeight*0.2)
       );
-      this.anctx.stroke();
+      this.ctx.stroke();
     }
     let dataArray = Array.from(this.serverData, ([key, value]) => value);
     for (let i = 0; i<dataArray.length; i++) {
       if (this.hover === dataArray[i].sid) {
-        this.anctx.fillStyle = 'RED';
+        this.ctx.fillStyle = 'RED';
       } else {
-        this.anctx.fillStyle = '#E1E1E1';
+        this.ctx.fillStyle = '#E1E1E1';
       };
-      this.anctx.beginPath();
-      this.anctx.strokeStyle = 'BLACK';
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = 'BLACK';
       let x = 10 + Math.floor(spacingWidth)*dataArray[i].rack
       + Math.floor(spacingWidth*0.1);
       let y = 30 + spacingHeight*dataArray[i].unit
       + Math.floor(spacingHeight*0.2);
       let rectWidth = Math.floor(spacingWidth*0.8);
       let rectHeight = spacingHeight;
-      this.anctx.rect(x, y, rectWidth, rectHeight);
-      this.anctx.fill();
-      this.anctx.stroke();
-      this.anctx.beginPath();
-      this.anctx.rect(
+      this.ctx.rect(x, y, rectWidth, rectHeight);
+      this.ctx.fill();
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.rect(
           x + Math.floor(rectWidth*0.25),
           y + Math.floor(rectHeight*0.25),
           Math.floor(rectWidth*0.25),
@@ -214,17 +216,17 @@ export class RoomClient {
         let perc = current/(range/2);
         let green = 255 - Math.floor(255*perc);
         let color = 'rgb(255,'+green+',0)';
-        this.anctx.fillStyle = color;
+        this.ctx.fillStyle = color;
       } else {
         let perc = current/(range/2);
         let red = Math.floor(255*perc);
         let color = 'rgb('+red+',255,0)';
-        this.anctx.fillStyle = color;
+        this.ctx.fillStyle = color;
       }
-      this.anctx.fill();
-      this.anctx.stroke();
-      this.anctx.beginPath();
-      this.anctx.rect(
+      this.ctx.fill();
+      this.ctx.stroke();
+      this.ctx.beginPath();
+      this.ctx.rect(
           x + Math.floor(rectWidth*0.5),
           y + Math.floor(rectHeight*0.25),
           Math.floor(rectWidth*0.25),
@@ -237,26 +239,26 @@ export class RoomClient {
         let perc = current/(range/2);
         let green = 255 - Math.floor(255*perc);
         let color = 'rgb(255,'+green+',0)';
-        this.anctx.fillStyle = color;
+        this.ctx.fillStyle = color;
       } else {
         let perc = current/(range/2);
         let red = Math.floor(255*perc);
         let color = 'rgb('+red+',255,0)';
-        this.anctx.fillStyle = color;
+        this.ctx.fillStyle = color;
       }
-      this.anctx.fill();
-      this.anctx.stroke();
+      this.ctx.fill();
+      this.ctx.stroke();
     }
     if (dataArray.length == 0) {
-      this.anctx.fillStyle = 'rgba(198, 198, 198, 0.9)';
-      this.anctx.fillRect(0, 0,
-          this.anctx.canvas.width, this.anctx.canvas.height);
-      this.anctx.fillStyle = 'BLACK';
-      this.anctx.textAlign = 'center';
-      this.anctx.font = 'bolder 30px Arial';
-      this.anctx.fillText('No Data',
-          Math.floor(this.anctx.canvas.width/2),
-          Math.floor(this.anctx.canvas.height/2));
+      this.ctx.fillStyle = 'rgba(198, 198, 198, 0.9)';
+      this.ctx.fillRect(0, 0,
+          this.ctx.canvas.width, this.ctx.canvas.height);
+      this.ctx.fillStyle = 'BLACK';
+      this.ctx.textAlign = 'center';
+      this.ctx.font = 'bolder 30px Arial';
+      this.ctx.fillText('No Data',
+          Math.floor(this.ctx.canvas.width/2),
+          Math.floor(this.ctx.canvas.height/2));
     }
   }
   /**
@@ -299,5 +301,38 @@ export class RoomClient {
    */
   setDetails() {
     document.getElementById('room_details').innerHTML = 'Room '+ this.room;
+    document.getElementById('room_sql').innerHTML = this.getSQLString();
+  }
+  /**
+   * @return {string} sql
+   */
+  getSQLString() {
+    let sql = 'SELECT * FROM ServerData<br>'
+        + 'WHERE Room = \''+this.room+'\' '
+        + 'AND Live = true';
+    return sql;
+  }
+  /**
+   * @param {boolean} initial - indicates if first subscription or update
+   */
+  subscribe(initial) {
+    if (initial) {
+      this.subQuery = this.Dbinterface.doQuery();
+    } else {
+      this.subQuery = this.Dbinterface.updateQuery({
+        room: this.room,
+      });
+    }
+    this.subscription = this.subQuery.subscribe(
+        (x) => this.handleEvent(x),
+        (e) => {
+          console.log('Error in Roomclient: %s',
+              JSON.stringify(e));
+          this.subscription.unsubscribe();
+          this.serverData = new Map();
+          this.redraw();
+          this.subscribe(false);
+        },
+        () => console.log('onCompleted'));
   }
 }
