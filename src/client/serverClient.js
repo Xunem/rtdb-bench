@@ -55,7 +55,6 @@ export class ServerClient {
     this.controls.getServerOffset().subscribe((value) => {
       if (!isNaN(value)) {
         this.page = parseInt(value);
-        console.log(this.page);
         this.offset = this.page*this.limit;
         this.updateFilter();
         this.setDetails();
@@ -64,7 +63,6 @@ export class ServerClient {
 
     this.left.addEventListener('click', () => {
       this.page++;
-      console.log(this.page);
       this.controls.getServerOffset().next(this.page);
     });
     this.right.addEventListener('click', () => {
@@ -316,7 +314,6 @@ export class ServerClient {
             });
         this.errorMsg = 'No Data';
         this.Dbinterface.getLatency().subscribe((value) => {
-          console.log('server'+value);
           this.latency.innerHTML = '&Oslash; '+Math.round(value)+' ms';
         });
         this.subscription = this.Dbinterface.doQuery().subscribe(

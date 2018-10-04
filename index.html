@@ -25,27 +25,27 @@
         <div id="tempControl">
           <span class="type">Temperature</span>
           <div class="min">
-            <input type="number" min="25" max="100" step="1" value="25" id="minTemp">
+            <input type="number" min="25" max="90" step="1" value="25" id="minTemp">
           </div>
           <div class="rangeslider">
             <div id="sliderTemp">
             </div>
           </div>
           <div class="max">
-              <input type="number" min="25" max="100" step="1"  value="100" id="maxTemp">
+              <input type="number" min="25" max="90" step="1"  value="90" id="maxTemp">
           </div>
         </div>
         <div id="cpuControl">
             <span class="type">CPU</span>
             <div class="min">
-                <input type="number" min="50" max="100" step="1"  value="50" id="minCpu">
+                <input type="number" min="0" max="100" step="1"  value="0" id="minCpu">
             </div>
             <div class="rangeslider">
                 <div id="sliderCpu">
                 </div>
             </div>
             <div class="max">
-                <input type="number" min="50" max="100" step="1"  value="100" id="maxCpu">
+                <input type="number" min="0" max="100" step="1"  value="100" id="maxCpu">
             </div>
         </div>
         <button id="applyRange">Apply Range</button>
@@ -80,10 +80,12 @@
         <span id="overview_details" class="details">Overview</span>
         <span id="overview_sql" class="sql"></span>
         <div id="overview_baqend" class="client_ba">
+          <span class="provider">Baqend</span>
           <canvas id="ov_ba_cvs" width="400" height="300"></canvas>
           <span id="latency_ov_ba" class="latency">&Oslash; - ms</span>
         </div>
         <div id="overview_firebase" class="client_fb">
+          <span class="provider">Firebase</span>
           <canvas id="ov_fb_cvs" width="400" height="300"></canvas>
           <span id="latency_ov_fb" class="latency">&Oslash; - ms</span>
         </div>
@@ -92,10 +94,12 @@
         <span id="room_details" class="details">Room</span>
         <span id="room_sql" class="sql"></span>
         <div id="room_baqend" class="client_ba">
+          <span class="provider">Baqend</span>
           <canvas id="rm_ba_cvs" width="400" height="300"></canvas>
           <span id="latency_rm_ba" class="latency">&Oslash; - ms</span>
         </div>
         <div id="room_firebase" class="client_fb">
+          <span class="provider">Firebase</span>
           <canvas id="rm_fb_cvs" width="400" height="300"></canvas>
           <span id="latency_rm_fb" class="latency">&Oslash; - ms</span>
         </div>
@@ -104,12 +108,15 @@
         <span id="server_details" class="details">No Server selected</span>
         <span id="server_sql" class="sql"></span>
         <div id="server_baqend" class="client_ba">
+          <span class="provider">Baqend</span>
+          <span id="latency_srv_ba" class="latency">&Oslash; - ms</span>
           <button id="srv_ba_left" class="btn_srv btn_left" disabled>&#9664</button>
           <canvas id="srv_ba_cvs" width="400" height="300"></canvas>
           <button id="srv_ba_right" class="btn_srv btn_right" disabled>&#9654</button>
-          <span id="latency_srv_ba" class="latency">&Oslash; - ms</span>
+          
         </div>
         <div id="server_firebase" class="client_fb">
+          <span class="provider">Firebase</span>
           <button id="srv_fb_left" class="btn_srv btn_left" disabled>&#9664</button>
           <canvas id="srv_fb_cvs" width="400" height="300"></canvas>
           <button id="srv_fb_right" class="btn_srv btn_right" disabled>&#9654</button>

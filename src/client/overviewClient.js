@@ -1,4 +1,5 @@
-import {Dbinterface, PROV_BAQEND, PROV_FIREBASE, QUERY_ALL}
+import {Dbinterface, PROV_BAQEND, PROV_FIREBASE,
+  QUERY_ALL, RANGE_ALL, RANGE_TEMP, RANGE_CPU}
   from '../db-interface/dbinterface.js';
 import {MIN_TEMP, MAX_TEMP, MIN_CPU, MAX_CPU} from '../controls/controls.js';
 
@@ -19,13 +20,13 @@ export class OverviewClient {
     this.offset = 40;
     this.scaleX = 6;
     this.scaleY = 6;
-    this.minTemp = 25;
+    this.minTemp = MIN_TEMP;
     this.minTempLine = '';
-    this.maxTemp = 100;
+    this.maxTemp = MAX_TEMP;
     this.maxTempLine = '';
-    this.minCpu = 50;
+    this.minCpu = MIN_CPU;
     this.minCpuLine = '';
-    this.maxCpu = 100;
+    this.maxCpu = MAX_CPU;
     this.maxCpuLine = '';
     this.serverData = new Map();
     this.Dbinterface = new Dbinterface(provider, dbinstance, QUERY_ALL, {});
@@ -170,10 +171,7 @@ export class OverviewClient {
           console.log('Error in Overviewclient: %s',
               JSON.stringify(e));
           this.subscription.unsubscribe();
-          this.serverData = new Map();
-          this.serverDisplay = new Map();
-          this.redraw();
-          this.setSubscription();
+          this.subscribe();
         },
         () => console.log('onCompleted'));
   }
@@ -248,21 +246,21 @@ export class OverviewClient {
     this.ctx.stroke();
     if (this.serverData.size > 0) {
       // Draw Lines for Min-Max Ranges from Controlsection
-      if (this.minTempLine) {
+      if (this.minTempLine != '' && this.minTempLine > this.minTemp) {
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.getDisplayPositionY(this.minTempLine));
         this.ctx.lineTo(this.ctx.canvas.width,
             this.getDisplayPositionY(this.minTempLine));
         this.ctx.stroke();
       }
-      if (this.maxTempLine) {
+      if (this.maxTempLine != '' && this.maxTempLine < this.maxTemp) {
         this.ctx.beginPath();
         this.ctx.moveTo(0, this.getDisplayPositionY(this.maxTempLine));
         this.ctx.lineTo(this.ctx.canvas.width,
             this.getDisplayPositionY(this.maxTempLine));
         this.ctx.stroke();
       }
-      if (this.minCpuLine) {
+      if (this.minCpuLine != '' && this.minCpuLine > this.minCpu) {
         this.ctx.beginPath();
         this.ctx.moveTo(this.getDisplayPositionX(this.minCpuLine), 0);
         this.ctx.lineTo(
@@ -270,7 +268,7 @@ export class OverviewClient {
             this.ctx.canvas.height);
         this.ctx.stroke();
       }
-      if (this.maxCpuLine) {
+      if (this.maxCpuLine != '' && this.maxCpuLine < this.maxCpu) {
         this.ctx.beginPath();
         this.ctx.moveTo(this.getDisplayPositionX(this.maxCpuLine), 0);
         this.ctx.lineTo(
@@ -345,6 +343,7 @@ export class OverviewClient {
    */
   remove(mid) {
     this.serverData.delete(mid);
+    console.log(this.serverData.size);
     this.redraw();
   }
   /**
@@ -368,12 +367,12 @@ export class OverviewClient {
    * Updates the Filterrange
    */
   updateFilter() {
-    this.tempChanged = (this.minTempLine || this.maxTempLine);
-    this.cpuChanged = (this.minCpuLine || this.maxCpuLine);
-    this.minTemp = (this.minTempLine) ? this.minTempLine : this.minTemp;
-    this.maxTemp = (this.maxTempLine) ? this.maxTempLine : this.maxTemp;
-    this.minCpu = (this.minCpuLine) ? this.minCpuLine : this.minCpu;
-    this.maxCpu = (this.maxCpuLine) ? this.maxCpuLine : this.maxCpu;
+    this.tempChanged = (this.minTempLine !=='' || this.maxTempLine !=='');
+    this.cpuChanged = (this.minCpuLine !== '' || this.maxCpuLine !== '');
+    this.minTemp = (this.minTempLine !== '') ? this.minTempLine : this.minTemp;
+    this.maxTemp = (this.maxTempLine !== '') ? this.maxTempLine : this.maxTemp;
+    this.minCpu = (this.minCpuLine !== '') ? this.minCpuLine : this.minCpu;
+    this.maxCpu = (this.maxCpuLine !== '') ? this.maxCpuLine : this.maxCpu;
 
     this.setSubscription();
   }
@@ -382,31 +381,48 @@ export class OverviewClient {
    */
   setSubscription() {
     try {
-      if (this.minTemp == MIN_TEMP && this.maxTemp == MAX_TEMP
-        && this.minCpu == MIN_CPU && this.maxCpu == MAX_CPU) {
-        // no Range applied
-        if (this.initial) {
-          this.subquery = this.Dbinterface.doQuery();
-          this.initial = false;
-        } else {
-          this.subscription.unsubscribe();
-          this.subquery = this.Dbinterface.updateQuery({});
-        }
-        this.subscribe();
-      } else {
-        if (this.tempChanged || this.cpuChanged) {
+      let tempInitial = (this.minTemp == MIN_TEMP && this.maxTemp == MAX_TEMP);
+      let cpuInitial = (this.minCpu == MIN_CPU && this.maxCpu == MAX_CPU);
+
+      if (this.tempChanged || this.cpuChanged || this.initial) {
+        if (tempInitial && cpuInitial) {
+          if (this.initial) {
+            this.subquery = this.Dbinterface.doQuery();
+            this.initial = false;
+          } else {
+            this.subscription.unsubscribe();
+            this.subquery = this.Dbinterface.updateQuery({});
+          }
+          this.subscribe();
+        } else if (tempInitial && !cpuInitial) {
           this.subscription.unsubscribe();
           this.subquery = this.Dbinterface.updateQuery({
-            range: true,
+            range: RANGE_TEMP,
+            minTemp: this.minTemp,
+            maxTemp: this.maxTemp,
+          });
+          this.subscribe();
+        } else if (!tempInitial && cpuInitial) {
+          this.subscription.unsubscribe();
+          this.subquery = this.Dbinterface.updateQuery({
+            range: RANGE_CPU,
+            minCpu: this.minCpu,
+            maxCpu: this.maxCpu,
+          });
+          this.subscribe();
+        } else {
+          this.subscription.unsubscribe();
+          this.subquery = this.Dbinterface.updateQuery({
+            range: RANGE_ALL,
             minTemp: this.minTemp,
             maxTemp: this.maxTemp,
             minCpu: this.minCpu,
             maxCpu: this.maxCpu,
           });
           this.subscribe();
-        } else {
-          console.log('Range not changed.');
         }
+      } else {
+        console.log('Range not changed.');
       }
     } catch (err) {
       this.errorMsg = err.message;

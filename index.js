@@ -4,9 +4,10 @@ import {Producer} from './src/producer/producer.js';
 import {OverviewClient} from './src/client/overviewClient.js';
 import {RoomClient} from './src/client/roomClient.js';
 import {ServerClient} from './src/client/serverClient.js';
-import {Controls} from './src/controls/controls.js';
+import {Controls, MIN_TEMP, MAX_TEMP,
+  MIN_CPU, MAX_CPU} from './src/controls/controls.js';
 import 'nouislider';
-
+let ts = Date.now();
 let room = 1;
 initConnections.then((instances) => {
   const producer = new Producer(instances, 3);
@@ -25,6 +26,8 @@ initConnections.then((instances) => {
 });
 
 initConnections.then((instances) => {
+  console.log('ready '+ (Date.now()-ts));
+
   const firebaseClient = instances.fb;
   const baqendClient = instances.ba;
   const controls = new Controls();
@@ -53,11 +56,11 @@ initConnections.then((instances) => {
   let minCpu = document.getElementById('minCpu');
   let maxCpu = document.getElementById('maxCpu');
   noUiSlider.create(sliderTemp, {
-    start: [25, 100],
+    start: [MIN_TEMP, MAX_TEMP],
     connect: true,
     range: {
-      'min': 25,
-      'max': 100,
+      'min': MIN_TEMP,
+      'max': MAX_TEMP,
     },
   });
   sliderTemp.noUiSlider.on('update', (values, handle) => {
@@ -77,11 +80,11 @@ initConnections.then((instances) => {
     controls.getMaxTemp().next(maxCpu.value);
   });
   noUiSlider.create(sliderCpu, {
-    start: [50, 100],
+    start: [MIN_CPU, MAX_CPU],
     connect: true,
     range: {
-      'min': 50,
-      'max': 100,
+      'min': MIN_CPU,
+      'max': MAX_CPU,
     },
   });
   sliderCpu.noUiSlider.on('update', (values, handle) => {

@@ -3,12 +3,12 @@ import {map, scan} from 'rxjs/operators';
 export const PROV_BAQEND = 0;
 export const PROV_FIREBASE = 1;
 export const QUERY_ALL = 10;
-export const QUERY_SINGLERANGE = 20;
-export const QUERY_DUALRANGE = 30;
 export const QUERY_SERVERROOM = 50;
-export const QUERY_AVG = 60;
 export const QUERY_SERVER = 70;
 export const INSERT = 80;
+export const RANGE_ALL = 100;
+export const RANGE_TEMP = 200;
+export const RANGE_CPU = 300;
 
 /** */
 export class Dbinterface {
@@ -20,7 +20,6 @@ export class Dbinterface {
    * like min-x, min-y or limit
    */
   constructor(provider, dbinstance, querytype, details) {
-    console.log('db'+dbinstance);
     switch (provider) {
       case PROV_FIREBASE: this.dbprov =
           new FirebaseClient(dbinstance, querytype, details);
@@ -99,7 +98,6 @@ class FirebaseClient {
    * like min-x, min-y or limit
    */
   constructor(dbinstance, queryType, details) {
-    console.log(dbinstance);
     this.fb_inst = dbinstance;
     this.latency = new BehaviorSubject();
     this.queryType = queryType;
@@ -112,16 +110,35 @@ class FirebaseClient {
   setQuery() {
     switch (this.queryType) {
       case QUERY_ALL:
+        this.query = this.query = this.fb_inst.database()
+            .ref('serverData/live/');
         if (this.details.range) {
-          throw new Error('Query not supported');
+          switch (this.details.range) {
+            case RANGE_TEMP:
+              this.query.orderByChild('temp')
+                  .startAt(this.details.minTemp)
+                  .endAt(this.details.maxTemp);
+              break;
+            case RANGE_CPU:
+              this.query.orderByChild('cpu')
+                  .startAt(this.details.minCpu)
+                  .endAt(this.details.maxCpu);
+              break;
+            case RANGE_ALL:
+              throw new Error('Query not supported');
+              break;
+          }
         }
         break;
       case QUERY_SERVERROOM:
+        this.query = this.query = this.fb_inst.database()
+            .ref('serverData/live/')
+            .orderByChild('serverroom')
+            .equalTo(this.details.room);
         break;
       case QUERY_SERVER:
-        let room = this.details.serverid.split('r')[1];
         this.query = this.fb_inst.database()
-            .ref('serverData/'+room+'/'+this.details.serverid)
+            .ref('serverData/all/'+this.details.serverid)
             .orderByChild('ts')
             .limitToLast(this.details.limit);
         if (this.details.offset > 0) {
@@ -135,97 +152,24 @@ class FirebaseClient {
    * @return {Observable} Subscription
    */
   doQuery() {
-    if (this.queryType == QUERY_ALL) {
-      this.initialDataLoaded = [];
-      let allRooms = this.fb_inst.database().ref('serverData/');
-      allRooms.once('value', (roomlist) => {
-        roomlist.forEach((roomdata) => {
-          console.log(JSON.stringify(roomdata));
-          let allServers = this.fb_inst.database().ref('serverData/'
-          +roomdata.key+'/');
-          this.query = [];
-          allServers.once('value', (serverlist) => {
-            serverlist.forEach((serverdata) => {
-              let q = this.fb_inst.database().ref('serverData/'
-              +roomdata.key+'/'+ serverdata.key +'/')
-                  .orderByChild('ts')
-                  .limitToLast(1);
-              q.on('child_added', (data) => {
-                if (this.initialDataLoaded[serverdata.key]) {
-                  this.latency.next(Date.now()-data.val().ts);
-                }
-                this.added.next({matchType: 'add',
-                  data: data.val(),
-                });
-              });
-              q.on('child_removed', (data) => {
-                this.removed.next({matchType: 'remove',
-                  data: data.val(),
-                });
-              });
-              q.once('value', (snapshot) => {
-                this.initialDataLoaded[snapshot.key] = true;
-              });
-              this.query.push(q);
-            });
-          });
-        });
+    this.addQuery = this.query.on('child_added', (data) => {
+      if (this.initialDataLoaded) {
+        this.latency.next(Date.now() - data.val().ts);
+      }
+      this.added.next({matchType: 'add',
+        data: data.val(),
       });
-      this.subscription = merge(this.added, this.removed);
-      return this.subscription;
-    } else if (this.queryType == QUERY_SERVERROOM) {
-      this.initialDataLoaded = [];
-      let allServers = this.fb_inst.database().ref('serverData/'
-          +this.details.room+'/');
-      this.query = [];
-      allServers.once('value', (serverlist) => {
-        serverlist.forEach((serverdata) => {
-          let q = this.fb_inst.database().ref('serverData/'
-          +this.details.room+'/'+ serverdata.key +'/')
-              .orderByChild('ts')
-              .limitToLast(1);
-          q.on('child_added', (data) => {
-            if (this.initialDataLoaded[serverdata.key]) {
-              this.latency.next(Date.now()-data.val().ts);
-            }
-            this.added.next({matchType: 'add',
-              data: data.val(),
-            });
-          });
-          q.on('child_removed', (data) => {
-            this.removed.next({matchType: 'remove',
-              data: data.val(),
-            });
-          });
-          q.once('value', (snapshot) => {
-            console.log(snapshot);
-            this.initialDataLoaded[snapshot.key] = true;
-          });
-          this.query.push(q);
-        });
+    });
+    this.removeQuery = this.query.on('child_removed', (data) => {
+      this.removed.next({matchType: 'remove',
+        data: data.val(),
       });
-      this.subscription = merge(this.added, this.removed);
-      return this.subscription;
-    } else {
-      this.addQuery = this.query.on('child_added', (data) => {
-        if (this.initialDataLoaded) {
-          this.latency.next(Date.now() - data.val().ts);
-        }
-        this.added.next({matchType: 'add',
-          data: data.val(),
-        });
-      });
-      this.removeQuery = this.query.on('child_removed', (data) => {
-        this.removed.next({matchType: 'remove',
-          data: data.val(),
-        });
-      });
-      this.query.once('value', (snapshot) => {
-        this.initialDataLoaded = true;
-      });
-      this.subscription = merge(this.added, this.removed);
-      return this.subscription;
-    }
+    });
+    this.query.once('value', (snapshot) => {
+      this.initialDataLoaded = true;
+    });
+    this.subscription = merge(this.added, this.removed);
+    return this.subscription;
   }
   /**
    * @param {Object} details - Object with further information
@@ -235,16 +179,8 @@ class FirebaseClient {
   updateQuery(details) {
     this.added = new ReplaySubject(40);
     this.removed = new ReplaySubject(40);
-    if (this.queryType == QUERY_SERVERROOM || this.queryType == QUERY_ALL) {
-      for (let i = 0; i<this.query.length; i++) {
-        this.query[i].off();
-      }
-      this.query = [];
-      this.initialDataLoaded = [];
-    } else {
-      this.query.off();
-      this.initialDataLoaded = false;
-    }
+    this.query.off();
+    this.initialDataLoaded = false;
     this.details = details;
     this.setQuery();
     return this.doQuery();
@@ -253,9 +189,9 @@ class FirebaseClient {
    * @param {Object} data - Sensordata which should be saved
    */
   saveData(data) {
-    let newDataRef = this.fb_inst.database()
-        .ref('serverData/'+data.room+'/'+data.sid).push();
-    newDataRef.set({
+    let liveDataRef = this.fb_inst.database()
+        .ref('serverData/live/'+data.mid);
+    liveDataRef.set({
       mid: data.mid,
       sid: data.sid,
       serverroom: data.room,
@@ -265,13 +201,28 @@ class FirebaseClient {
       temp: data.temp,
       cpu: data.cpu,
       ts: data.ts,
-      live: data.live,
+    });
+    let allDataRef = this.fb_inst.database()
+        .ref('serverData/all/'+data.sid+'/'+data.mid);
+    allDataRef.set({
+      mid: data.mid,
+      sid: data.sid,
+      serverroom: data.room,
+      rack: data.rack,
+      unit: data.unit,
+      os: data.os,
+      temp: data.temp,
+      cpu: data.cpu,
+      ts: data.ts,
     });
   }
   /**
-   * @param {String} id
+   * @param {Object} data
    */
-  updateData(id) {
+  updateData(data) {
+    let oldDataRef = this.fb_inst.database()
+        .ref('serverData/live/'+data.mid);
+    oldDataRef.remove();
   }
   /**
    * Deletes all Serverdata to reset the Application
@@ -307,11 +258,23 @@ class BaqendClient {
       case QUERY_ALL: this.query = this.ba_inst.ServerData.find()
           .equal('live', true);
         if (this.details.range) {
-          this.query
-              .between('cpu',
-                  this.details.minCpu, this.details.maxCpu)
-              .between('temp',
+          switch (this.details.range) {
+            case RANGE_TEMP:
+              this.query.between('temp',
                   this.details.minTemp, this.details.maxTemp);
+              break;
+            case RANGE_CPU:
+              this.query.between('cpu',
+                  this.details.minCpu, this.details.maxCpu);
+              break;
+            case RANGE_ALL:
+              this.query
+                  .between('cpu',
+                      this.details.minCpu, this.details.maxCpu)
+                  .between('temp',
+                      this.details.minTemp, this.details.maxTemp);
+              break;
+          }
         }
         break;
       case QUERY_SERVERROOM: this.query = this.ba_inst.ServerData.find()
@@ -326,9 +289,7 @@ class BaqendClient {
         }
         this.query =this.query.limit(this.details.limit);
         break;
-      case QUERY_AVG: this.query = this.ba_inst.SensorData.find();
-        break;
-      default: this.query = this.ba_inst.SensorData.find();
+      default: ;
     }
   }
   /**
@@ -394,12 +355,14 @@ class BaqendClient {
     serverData.save();
   }
   /**
-   * @param {String} id
+   * @param {Object} data
    */
-  updateData(id) {
-    this.ba_inst.ServerData.load(id).then((data) => {
-      data.live = false;
-      data.update();
+  updateData(data) {
+    console.log(data);
+    this.ba_inst.ServerData.load(data.mid).then((serverData) => {
+      console.log(serverData);
+      serverData.live = false;
+      serverData.update();
     });
   }
   /**

@@ -16,7 +16,6 @@ export const initConnections = new Promise((resolve) => {
   instances.ba = DB;
   instances.ba.connect(app);
   instances.ba.ready().then(() => {
-    console.log(instances.fb);
     resolve(instances);
   });
 });

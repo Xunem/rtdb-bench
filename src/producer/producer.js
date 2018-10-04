@@ -49,20 +49,17 @@ export class Producer {
       ((i+1)%5 == 0) ? rackCounter = (rackCounter+1)%4 : '';
       let rand = Math.random();
       server.temp = rand*40+25;
-      server.cpu = rand*50+50;
+      server.cpu = rand*50+25;
+      server.prob = rand;
       server.ts = Date.now();
       server.live = true;
       this.servers.push(server);
-      this.firebaseClient.saveData(server);
-      this.baqendClient.saveData(server);
     }
-    this.initial = false;
   }
   /** */
   step() {
     if (this.initial) {
       this.setup();
-      this.initial = false;
     }
     for (let i = 0; i < this.insertRate; i++) {
       let oldData = this.servers[this.counter];
@@ -78,27 +75,46 @@ export class Producer {
       let dir = Math.floor(prob)%2;
       if (prob<80) {
         if (dir == 0) {
-          oldData.temp = Math.min(oldData.temp + (prob/100), 90);
+          newData.cpu = Math.min(oldData.cpu + (prob/100), 100);
         } else {
-          oldData.temp = Math.max(oldData.temp - (prob/100), 25);
+          newData.cpu = Math.max(oldData.cpu - (prob/100), 0);
         }
       } else {
         if (dir == 0) {
-          oldData.temp = Math.min(oldData.temp + (prob%10), 90);
+          newData.cpu = Math.min(oldData.cpu + (prob%10), 100);
         } else {
-          oldData.temp = Math.max(oldData.temp - (prob%10), 25);
+          newData.cpu = Math.max(oldData.cpu - (prob%10), 0);
         }
       }
-      newData.temp = oldData.temp;
-      newData.cpu = oldData.cpu;
+      let oldProb = oldData.prob;
+      let oldDir = Math.floor(oldProb)%2;
+      if (oldProb<80) {
+        if (oldDir == 0) {
+          newData.temp = Math.min(oldData.temp + (oldProb/100), 90);
+        } else {
+          newData.temp = Math.max(oldData.temp - (oldProb/100), 25);
+        }
+      } else {
+        if (oldDir == 0) {
+          newData.temp = Math.min(oldData.temp + (oldProb%10), 90);
+        } else {
+          newData.temp = Math.max(oldData.temp - (oldProb%10), 25);
+        }
+      }
+      newData.prob = prob;
       newData.ts = Date.now();
       newData.live = true;
-      this.counter = (this.counter+1)%this.serverCount;
-      let oldId = oldData.mid;
-      oldData.mid = newData.mid;
+      this.servers[this.counter] = newData;
+      if (!this.initial) {
+        this.firebaseClient.updateData(oldData);
+        this.baqendClient.updateData(oldData);
+      }
       this.firebaseClient.saveData(newData);
-      this.baqendClient.updateData(oldId);
       this.baqendClient.saveData(newData);
+      if (this.counter == this.serverCount-1) {
+        this.initial = false;
+      }
+      this.counter = (this.counter+1)%this.serverCount;
     }
   }
   /** */
