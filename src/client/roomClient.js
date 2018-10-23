@@ -102,7 +102,6 @@ export class RoomClient {
           let unit = Math.floor((y-upperEndY)/spacingHeight);
           let hover = 'r'+this.room+'r'+rack+'u'+unit;
           let serverInfo = this.getServerData(hover);
-          console.log(serverInfo);
           if (serverInfo) {
             this.hover = hover;
             cvs.style.cursor = 'pointer';
@@ -286,7 +285,9 @@ export class RoomClient {
     switch (e.matchType) {
       case 'add': this.add(e.data);
         break;
-      case 'remove': this.remove(e.data.mid);
+      case 'remove': this.remove(e.data.sid);
+        break;
+      case 'change': this.add(e.data);
         break;
       default: console.log('Wrong Eventtype');
     }
@@ -301,16 +302,16 @@ export class RoomClient {
       cpu: data.cpu,
       temp: data.temp,
     });
-    this.serverData.set(data.mid, data);
+    this.serverData.set(data.sid, data);
     this.redraw();
   }
 
   /**
-   * Deletes a Measurement Point of Serverdata
-   * @param {*} mid - ID of the Measurement Point which should be deleted
+   * Deletes Serverdata
+   * @param {*} sid - ID of the ServerData which should be deleted
    */
-  remove(mid) {
-    this.serverData.delete(mid);
+  remove(sid) {
+    this.serverData.delete(sid);
     this.redraw();
   }
   /**
@@ -324,9 +325,8 @@ export class RoomClient {
    * @return {string} sql
    */
   getSQLString() {
-    let sql = 'SELECT * FROM ServerData<br>'
-        + 'WHERE Room = \''+this.room+'\' '
-        + 'AND Live = true';
+    let sql = 'SELECT * FROM ServerState<br>'
+        + 'WHERE Room = \''+this.room+'\' ';
     return sql;
   }
   /**
@@ -356,8 +356,10 @@ export class RoomClient {
     this.subscription = this.subQuery.subscribe(
         (x) => this.handleEvent(x),
         (e) => {
-          console.log('Error in Roomclient: %s',
-              JSON.stringify(e));
+          console.log('Error in Roomclient'
+              +((this.provider === PROV_BAQEND)
+              ? ' Baqend ' : ' Firebase ') + '%s',
+          JSON.stringify(e));
           this.subscription.unsubscribe();
           this.serverData = new Map();
           this.redraw();

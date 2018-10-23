@@ -320,7 +320,9 @@ export class OverviewClient {
     switch (e.matchType) {
       case 'add': this.add(e.data);
         break;
-      case 'remove': this.remove(e.data.mid);
+      case 'remove': this.remove(e.data.sid);
+        break;
+      case 'change': this.add(e.data);
         break;
       default: console.log('Wrong Eventtype');
     }
@@ -332,7 +334,7 @@ export class OverviewClient {
    */
   add(data) {
     this.serverDisplay.set(data.sid, data);
-    this.serverData.set(data.mid, data);
+    this.serverData.set(data.sid, data);
     this.redraw();
     this.calcHottest();
   }
@@ -343,7 +345,6 @@ export class OverviewClient {
    */
   remove(mid) {
     this.serverData.delete(mid);
-    console.log(this.serverData.size);
     this.redraw();
   }
   /**
@@ -397,17 +398,17 @@ export class OverviewClient {
         } else if (tempInitial && !cpuInitial) {
           this.subscription.unsubscribe();
           this.subquery = this.Dbinterface.updateQuery({
-            range: RANGE_TEMP,
-            minTemp: this.minTemp,
-            maxTemp: this.maxTemp,
+            range: RANGE_CPU,
+            minCpu: this.minCpu,
+            maxCpu: this.maxCpu,
           });
           this.subscribe();
         } else if (!tempInitial && cpuInitial) {
           this.subscription.unsubscribe();
           this.subquery = this.Dbinterface.updateQuery({
-            range: RANGE_CPU,
-            minCpu: this.minCpu,
-            maxCpu: this.maxCpu,
+            range: RANGE_TEMP,
+            minTemp: this.minTemp,
+            maxTemp: this.maxTemp,
           });
           this.subscribe();
         } else {
@@ -444,8 +445,7 @@ export class OverviewClient {
    * @return {string} sql
    */
   getSQLString() {
-    let sql = 'SELECT * FROM ServerData<br>'
-        + 'WHERE Live = true<br>';
+    let sql = 'SELECT * FROM ServerState<br>';
 
     if (this.minTemp != MIN_TEMP) {
       sql = sql + '\xa0\xa0AND Temperature > '+this.minTemp+'<br>';

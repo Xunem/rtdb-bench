@@ -1,4 +1,5 @@
 import {BehaviorSubject} from 'rxjs';
+export const INSERT_RATE = 1;
 export const ROOMS = 2;
 export const RACKS = 4;
 export const UNITS = 5;
@@ -12,7 +13,7 @@ export const MAX_CPU = 100;
  */
 export class Controls {
   /**
-   *
+   * Constructor for class Controls
    */
   constructor() {
     this.minTemp = new BehaviorSubject();
@@ -30,7 +31,16 @@ export class Controls {
     });
     this.serverLimit = new BehaviorSubject();
     this.serverLimit.next(15);
+    this.listLimit = new BehaviorSubject();
+    this.listLimit.next(10);
     this.serverOffset = new BehaviorSubject();
+    this.listOffset = new BehaviorSubject();
+  }
+  /**
+   * @return {BehaviorSubject} Offset for hottest Servers to be shown
+   */
+  getListOffset() {
+    return this.listOffset;
   }
   /**
    * @return {BehaviorSubject} Number of last Measurements to be shown

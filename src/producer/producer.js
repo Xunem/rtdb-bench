@@ -107,7 +107,7 @@ export class Producer {
       this.servers[this.counter] = newData;
       if (!this.initial) {
         this.firebaseClient.updateData(oldData);
-        this.baqendClient.updateData(oldData);
+        // this.baqendClient.updateData(oldData);
       }
       this.firebaseClient.saveData(newData);
       this.baqendClient.saveData(newData);

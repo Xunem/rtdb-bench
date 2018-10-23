@@ -1,68 +1,13 @@
-/* The switch - the box around the slider */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
-}
-
-/* Hide default HTML checkbox */
-.switch input {display:none;}
-
-/* The slider */
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  -webkit-transition: .4s;
-  transition: .4s;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  -webkit-transition: .4s;
-  transition: .4s;
-}
-
-input:checked + .slider {
-  background-color: #2196F3;
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
-}
-
-input:checked + .slider:before {
-  -webkit-transform: translateX(16px);
-  -ms-transform: translateX(16px);
-  transform: translateX(16px);
-}
-
-/* Rounded sliders */
-.slider.round {
-  border-radius: 20px;
-}
-
-.slider.round:before {
-  border-radius: 50%;
+html{
+  padding-bottom:30px;
 }
 #wrapper {
-  width:1212px;
+  width:1618px;
   margin:auto;
 }
-
+/* General Control */
 #genControl {
-  width:1208px;
+  width:1612px;
   height:50px;
   border:2px solid black;
 }
@@ -82,12 +27,6 @@ input:checked + .slider:before {
   height: 50px;
   margin:30px auto;
 }
-#hottestSrv {
-  padding:20px;
-  width: 300px;
-  display:block;
-  font-weight:bold;
-}
 .subControl {
   display:block;
   width:400px;
@@ -95,58 +34,23 @@ input:checked + .slider:before {
   height:160px;
   float:left;
 }
-.client{
-  width:400px;
-  float:left;
-  border:2px solid black;
-}
-.details {
+/* Overview Control */
+#ovControl {
+  width:804px;
   display:block;
-  width:100%;
-  background-color:black;
-  color:white;
-  text-align:center;
-  font-family: Arial, Helvetica, sans-serif;
-  line-height: 40px;
-  font-weight: bold;
+  border:2px solid black;
+  height:160px;
+  float:left;
 }
-@keyframes bgchanger {
-  0%, 100% {
-    background-color: black;
-  }
-  50% {
-    background-color: grey;
-  }
-}
-.serverChange {
-  -webkit-animation: bgchanger 2s normal forwards; /* Safari 4+ */
-  -moz-animation:    bgchanger 2s normal forwards; /* Fx 5+ */
-  -o-animation:      bgchanger 2s normal forwards; /* Opera 12+ */
-  animation:         bgchanger 2s normal forwards; /* IE 10+, Fx 29+ */
-}
-.client Canvas{
-  border-top:2px solid black;
-}
-#ToolTip {
-  display:none;
-  position: absolute;
-  border: 2px solid #ff9d00;
-  border-radius: 12px;
-  padding:15px;
-  background-color: white;
-  font-weight: bold;
-  transition: opacity 0.1s ease-in;
-  z-index:99;
-}
-#ToolTip:hover{
-  display:none!important;
-}
+
 #tempControl {
+  margin:auto;
   padding:0;
   width:400px;
   height:60px;
 }
 #cpuControl {
+  margin:auto;
   padding:0;
   width:400px;
   height:65px;
@@ -187,6 +91,118 @@ input:checked + .slider:before {
   margin-right:20px;
 }
 
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.switch input {display:none;}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(16px);
+  -ms-transform: translateX(16px);
+  transform: translateX(16px);
+}
+
+.slider.round {
+  border-radius: 20px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+/* Server Control */
+#hottestSrv {
+  padding:20px;
+  width: 300px;
+  display:block;
+  font-weight:bold;
+}
+.client{
+  width:400px;
+  float:left;
+  border:2px solid black;
+}
+.sql{
+  display:block;
+  padding:20px;
+  height: 115px;
+  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+}
+.details {
+  display:block;
+  width:100%;
+  background-color:black;
+  color:white;
+  text-align:center;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 40px;
+  font-weight: bold;
+}
+@keyframes bgchanger {
+  0%, 100% {
+    background-color: black;
+  }
+  50% {
+    background-color: grey;
+  }
+}
+.serverChange {
+  -webkit-animation: bgchanger 2s normal forwards; /* Safari 4+ */
+  -moz-animation:    bgchanger 2s normal forwards; /* Fx 5+ */
+  -o-animation:      bgchanger 2s normal forwards; /* Opera 12+ */
+  animation:         bgchanger 2s normal forwards; /* IE 10+, Fx 29+ */
+}
+#ToolTip {
+  display:none;
+  position: absolute;
+  border: 2px solid #ff9d00;
+  border-radius: 12px;
+  padding:15px;
+  background-color: white;
+  font-weight: bold;
+  transition: opacity 0.1s ease-in;
+  z-index:99;
+}
+#ToolTip:hover{
+  display:none!important;
+}
+
+
 .limit{
   font-weight:bolder;
   padding:20px;
@@ -195,19 +211,20 @@ input:checked + .slider:before {
 #server canvas{
   float:left;
   border:none;
-  border-top:1px solid black;
 }
 
 .client_ba{
   width:400px;
   height:300px;
   position: relative;
+  border-top:2px solid black;
 }
 
 .client_fb{
   width:400px;
   height:300px;
   position: relative;
+  border-top:2px solid black;
 }
 
 .btn_srv {
@@ -235,11 +252,70 @@ input:checked + .slider:before {
   right:0;
 }
 
-.sql{
+.ovl ul{
+  display: block;
+  padding:0px;
+  margin:0px;
+  text-decoration:none;
+  list-style:none;
+  width:100%;
+  height:272px;
+  background-color:#D6D6D6;
+  padding-top: 28px;
+}
+.ovl .btn_list{
   display:block;
-  padding:20px;
-  height: 115px;
-  font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+  border:none;
+  width:50%;
+  float:left;
+  height:28px;
+  background-color:#D6D6D6;
+}
+.ovl .btn_list:hover:enabled{
+  background-color:white;
+  cursor: pointer;
+}
+.ovl li{
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight:bold;
+  display:block;
+  width:100%;
+}
+.ovl .even{
+  background-color: white;
+}
+.ovl li .index{
+  display:block;
+  text-align:center;
+  float:left;
+  width:10%;
+  height:100%;
+}
+.ovl li .data{
+  display:block;
+  text-align:center;
+  float:left;
+  width:30%;
+  height:100%;
+}
+.ovl li:hover{
+  background-color:red;
+  cursor: pointer;
+}
+.ovl .overlay{
+  background-color: rgba(198, 198, 198, 0.9);
+  display:none;
+  position:absolute;
+  font-weight:bolder;
+  font-size: 30px;
+  text-align:center;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height:300px;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:25;
 }
 
 .latency{

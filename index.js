@@ -1,16 +1,20 @@
 import {PROV_BAQEND, PROV_FIREBASE} from './src/db-interface/dbinterface.js';
 import {initConnections} from './src/db-interface/dbconnector.js';
 import {Producer} from './src/producer/producer.js';
+import {OverviewListClient} from './src/client/overviewListClient.js';
 import {OverviewClient} from './src/client/overviewClient.js';
 import {RoomClient} from './src/client/roomClient.js';
 import {ServerClient} from './src/client/serverClient.js';
 import {Controls, MIN_TEMP, MAX_TEMP,
-  MIN_CPU, MAX_CPU} from './src/controls/controls.js';
+  MIN_CPU, MAX_CPU, INSERT_RATE} from './src/controls/controls.js';
 import 'nouislider';
+
 let ts = Date.now();
 let room = 1;
+
 initConnections.then((instances) => {
-  const producer = new Producer(instances, 3);
+  console.log('ready '+ (Date.now()-ts));
+  const producer = new Producer(instances, INSERT_RATE);
   document.getElementById('step').addEventListener('click', () => {
     producer.step();
   });
@@ -23,14 +27,13 @@ initConnections.then((instances) => {
   document.getElementById('reset').addEventListener('click', () => {
     producer.reset();
   });
-});
-
-initConnections.then((instances) => {
-  console.log('ready '+ (Date.now()-ts));
-
   const firebaseClient = instances.fb;
   const baqendClient = instances.ba;
   const controls = new Controls();
+  const overviewListClientBa = new OverviewListClient(
+      controls, PROV_BAQEND, baqendClient);
+  const overviewListClientFb = new OverviewListClient(
+      controls, PROV_FIREBASE, firebaseClient);
   const overviewClientBa = new OverviewClient(
       controls, PROV_BAQEND, baqendClient);
   const overviewClientFb = new OverviewClient(
@@ -43,6 +46,9 @@ initConnections.then((instances) => {
       controls, PROV_BAQEND, baqendClient, 'r2r2u0');
   const serverClientFb = new ServerClient(
       controls, PROV_FIREBASE, firebaseClient, 'r2r2u0');
+
+  overviewListClientBa.init();
+  overviewListClientFb.init();
   overviewClientBa.init();
   overviewClientFb.init();
   roomClientBa.init();
@@ -109,6 +115,8 @@ initConnections.then((instances) => {
   document.getElementById('applyRange').addEventListener('click', () => {
     overviewClientBa.updateFilter();
     overviewClientFb.updateFilter();
+    overviewListClientBa.updateFilter(minCpu.value, maxCpu.value);
+    overviewListClientFb.updateFilter(minCpu.value, maxCpu.value);
   });
 
   document.getElementById('hottest').addEventListener('change', () => {

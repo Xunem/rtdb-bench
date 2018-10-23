@@ -2,15 +2,19 @@ import {from, merge, ReplaySubject, BehaviorSubject} from 'rxjs';
 import {map, scan} from 'rxjs/operators';
 export const PROV_BAQEND = 0;
 export const PROV_FIREBASE = 1;
-export const QUERY_ALL = 10;
-export const QUERY_SERVERROOM = 50;
-export const QUERY_SERVER = 70;
-export const INSERT = 80;
+export const QUERY_HOTTEST = 10;
+export const QUERY_ALL = 20;
+export const QUERY_SERVERROOM = 30;
+export const QUERY_SERVER = 40;
+export const INSERT = 50;
 export const RANGE_ALL = 100;
 export const RANGE_TEMP = 200;
 export const RANGE_CPU = 300;
 
-/** */
+/**
+ * Interface class, delegates Calls to Interfaceclass
+ * of the actual Database Provider
+ */
 export class Dbinterface {
   /**
    * @param {number} provider - The Real-Time Database Provider
@@ -31,13 +35,14 @@ export class Dbinterface {
   }
   /**
    * Delegates saving procedure to chosen Database Provider
-   * @param {point} data - The Point which should be saved
+   * @param {Object} data - The Point which should be saved
    */
   saveData(data) {
     this.dbprov.saveData(data);
   }
   /**
-   * @param {String} id
+   * Delegates update procedure to chosen Database Provider
+   * @param {String} id - Id
    */
   updateData(id) {
     this.dbprov.updateData(id);
@@ -109,18 +114,31 @@ class FirebaseClient {
   /** */
   setQuery() {
     switch (this.queryType) {
-      case QUERY_ALL:
+      case QUERY_HOTTEST:
         this.query = this.query = this.fb_inst.database()
-            .ref('serverData/live/');
+            .ref('serverState/')
+            .orderByChild('temp')
+            .limitToLast(this.details.limit);
+        if (this.details.range || this.details.offset) {
+          throw new Error('Query not supported');
+        }
+        break;
+      case QUERY_ALL:
+        this.query = this.fb_inst.database()
+            .ref('serverState/');
         if (this.details.range) {
           switch (this.details.range) {
             case RANGE_TEMP:
-              this.query.orderByChild('temp')
+              this.query = this.fb_inst.database()
+                  .ref('serverState/')
+                  .orderByChild('temp')
                   .startAt(this.details.minTemp)
                   .endAt(this.details.maxTemp);
               break;
             case RANGE_CPU:
-              this.query.orderByChild('cpu')
+              this.query = this.fb_inst.database()
+                  .ref('serverState/')
+                  .orderByChild('cpu')
                   .startAt(this.details.minCpu)
                   .endAt(this.details.maxCpu);
               break;
@@ -132,13 +150,13 @@ class FirebaseClient {
         break;
       case QUERY_SERVERROOM:
         this.query = this.query = this.fb_inst.database()
-            .ref('serverData/live/')
+            .ref('serverState/')
             .orderByChild('serverroom')
             .equalTo(this.details.room);
         break;
       case QUERY_SERVER:
         this.query = this.fb_inst.database()
-            .ref('serverData/all/'+this.details.serverid)
+            .ref('serverData/'+this.details.serverid)
             .orderByChild('ts')
             .limitToLast(this.details.limit);
         if (this.details.offset > 0) {
@@ -165,6 +183,8 @@ class FirebaseClient {
         data: data.val(),
       });
     });
+    this.removeQuery = this.query.on('child_moved', (data) => {
+    });
     this.query.once('value', (snapshot) => {
       this.initialDataLoaded = true;
     });
@@ -190,7 +210,7 @@ class FirebaseClient {
    */
   saveData(data) {
     let liveDataRef = this.fb_inst.database()
-        .ref('serverData/live/'+data.mid);
+        .ref('serverState/'+data.mid);
     liveDataRef.set({
       mid: data.mid,
       sid: data.sid,
@@ -203,7 +223,7 @@ class FirebaseClient {
       ts: data.ts,
     });
     let allDataRef = this.fb_inst.database()
-        .ref('serverData/all/'+data.sid+'/'+data.mid);
+        .ref('serverData/'+data.sid+'/'+data.mid);
     allDataRef.set({
       mid: data.mid,
       sid: data.sid,
@@ -221,13 +241,14 @@ class FirebaseClient {
    */
   updateData(data) {
     let oldDataRef = this.fb_inst.database()
-        .ref('serverData/live/'+data.mid);
+        .ref('serverState/'+data.mid);
     oldDataRef.remove();
   }
   /**
    * Deletes all Serverdata to reset the Application
    */
   deleteAll() {
+    this.fb_inst.database().ref('/serverState/').remove();
     this.fb_inst.database().ref('/serverData/').remove();
   }
   /**
@@ -255,31 +276,49 @@ class BaqendClient {
   /** */
   setQuery() {
     switch (this.queryType) {
-      case QUERY_ALL: this.query = this.ba_inst.ServerData.find()
-          .equal('live', true);
+      case QUERY_HOTTEST:
+        this.query = this.ba_inst.ServerState.find();
+        if (this.details.range) {
+          this.query = this.query.between('cpu',
+              Math.floor(this.details.minCpu), Math.floor(this.details.maxCpu));
+        }
+        this.query = this.query.descending('temp');
+        if (this.details.offset > 0) {
+          this.query = this.query.offset(this.details.offset);
+        }
+        this.query = this.query.limit(this.details.limit);
+        break;
+      case QUERY_ALL:
         if (this.details.range) {
           switch (this.details.range) {
             case RANGE_TEMP:
-              this.query.between('temp',
-                  this.details.minTemp, this.details.maxTemp);
+              this.query = this.ba_inst.ServerState
+                  .find()
+                  .between('temp',
+                      this.details.minTemp, this.details.maxTemp);
               break;
             case RANGE_CPU:
-              this.query.between('cpu',
-                  this.details.minCpu, this.details.maxCpu);
+              this.query = this.ba_inst.ServerState
+                  .find()
+                  .between('cpu',
+                      this.details.minCpu, this.details.maxCpu);
               break;
             case RANGE_ALL:
-              this.query
+              this.query = this.ba_inst.ServerState
+                  .find()
                   .between('cpu',
                       this.details.minCpu, this.details.maxCpu)
                   .between('temp',
                       this.details.minTemp, this.details.maxTemp);
               break;
           }
+        } else {
+          this.query = this.ba_inst.ServerState
+              .find();
         }
         break;
-      case QUERY_SERVERROOM: this.query = this.ba_inst.ServerData.find()
-          .equal('serverroom', this.details.room)
-          .equal('live', true);
+      case QUERY_SERVERROOM: this.query = this.ba_inst.ServerState.find()
+          .equal('serverroom', this.details.room);
         break;
       case QUERY_SERVER: this.query = this.ba_inst.ServerData.find()
           .equal('sid', this.details.serverid)
@@ -340,8 +379,9 @@ class BaqendClient {
    * @param {Object} data - Sensordata which should be saved
    */
   saveData(data) {
-    let serverData = new this.ba_inst.ServerData({
+    let saveData = {
       id: data.mid,
+      mid: data.mid,
       sid: data.sid,
       serverroom: data.room,
       rack: data.rack,
@@ -351,24 +391,52 @@ class BaqendClient {
       cpu: data.cpu,
       ts: data.ts,
       live: data.live,
-    });
+    };
+    let saveState = {
+      id: data.sid,
+      sid: data.sid,
+      mid: data.mid,
+      serverroom: data.room,
+      rack: data.rack,
+      unit: data.unit,
+      os: data.os,
+      temp: data.temp,
+      cpu: data.cpu,
+      ts: data.ts,
+      live: data.live,
+    };
+    let serverData = new this.ba_inst.ServerData(saveData);
+    let serverState = new this.ba_inst.ServerState(saveState);
     serverData.save();
+    this.ba_inst.ServerState.load(data.sid).then((serverData) => {
+      if (serverData) {
+        serverData.mid = data.mid;
+        serverData.temp = data.temp;
+        serverData.cpu = data.cpu;
+        serverData.ts = data.ts;
+        serverData.update();
+      } else {
+        serverState.save();
+      }
+    });
   }
   /**
    * @param {Object} data
    */
   updateData(data) {
-    console.log(data);
-    this.ba_inst.ServerData.load(data.mid).then((serverData) => {
-      console.log(serverData);
-      serverData.live = false;
-      serverData.update();
+    this.ba_inst.ServerState.load(data.mid).then((serverData) => {
+      serverData.delete();
     });
   }
   /**
    * Deletes all Serverdata to reset the Application
    */
   deleteAll() {
+    this.ba_inst.ServerState.find().resultList((result) => {
+      result.forEach((data) => {
+        data.delete();
+      });
+    });
     this.ba_inst.ServerData.find().count((count) => {
       if (count > 0) {
         this.ba_inst.ServerData.find().resultList((result) => {
