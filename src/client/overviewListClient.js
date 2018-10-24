@@ -21,7 +21,7 @@ export class OverviewListClient {
     this.minCpu = MIN_CPU;
     this.maxCpu = MAX_CPU;
     this.page = 0;
-    this.limit = 16;
+    this.limit = 12;
     this.serverData = new Map();
     this.Dbinterface = new Dbinterface(provider, dbinstance, QUERY_HOTTEST, {
       limit: this.limit,
