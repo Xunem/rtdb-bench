@@ -228,6 +228,10 @@ export class ServerClient {
           break;
         case 'remove': this.remove(e.data.mid);
           break;
+        case 'change': this.add(e.data);
+          break;
+        case 'move': this.add(e.data);
+          break;
         default: console.log('Wrong Eventtype');
       }
     } catch (e) {
@@ -348,5 +352,11 @@ export class ServerClient {
     if (this.ctx) {
       this.redraw();
     }
+  }
+  /**
+   * saves the Data Measurements
+   */
+  save() {
+    this.Dbinterface.saveMeasurements();
   }
 }

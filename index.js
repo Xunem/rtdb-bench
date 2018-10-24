@@ -15,6 +15,8 @@ let room = 1;
 initConnections.then((instances) => {
   console.log('ready '+ (Date.now()-ts));
   const producer = new Producer(instances, INSERT_RATE);
+  const firebaseClient = instances.fb;
+  const baqendClient = instances.ba;
   document.getElementById('step').addEventListener('click', () => {
     producer.step();
   });
@@ -27,8 +29,6 @@ initConnections.then((instances) => {
   document.getElementById('reset').addEventListener('click', () => {
     producer.reset();
   });
-  const firebaseClient = instances.fb;
-  const baqendClient = instances.ba;
   const controls = new Controls();
   const overviewListClientBa = new OverviewListClient(
       controls, PROV_BAQEND, baqendClient);
@@ -46,7 +46,17 @@ initConnections.then((instances) => {
       controls, PROV_BAQEND, baqendClient, 'r2r2u0');
   const serverClientFb = new ServerClient(
       controls, PROV_FIREBASE, firebaseClient, 'r2r2u0');
-
+  document.getElementById('save').addEventListener('click', () => {
+    producer.saveMeasurements();
+    overviewListClientBa.save();
+    overviewListClientFb.save();
+    overviewClientBa.save();
+    overviewClientFb.save();
+    roomClientBa.save();
+    roomClientFb.save();
+    serverClientBa.save();
+    serverClientFb.save();
+  });
   overviewListClientBa.init();
   overviewListClientFb.init();
   overviewClientBa.init();

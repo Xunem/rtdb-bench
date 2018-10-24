@@ -21,7 +21,7 @@ export class OverviewListClient {
     this.minCpu = MIN_CPU;
     this.maxCpu = MAX_CPU;
     this.page = 0;
-    this.limit = 10;
+    this.limit = 16;
     this.serverData = new Map();
     this.Dbinterface = new Dbinterface(provider, dbinstance, QUERY_HOTTEST, {
       limit: this.limit,
@@ -126,8 +126,8 @@ export class OverviewListClient {
         if (i%2 == 0) {
           li.classList.add('even');
         }
-        li.style.height = Math.round(272/dataArray.length) + 'px';
-        li.style.lineHeight = Math.round(272/dataArray.length) + 'px';
+        li.style.height = Math.round(272/this.limit) + 'px';
+        li.style.lineHeight = Math.round(272/this.limit) + 'px';
         li.addEventListener('click', () => {
           this.controls.getServerId().next(dataArray[i].sid);
         });
@@ -162,14 +162,29 @@ export class OverviewListClient {
    * @param {Event} e - The Event which should be handled
    */
   handleEvent(e) {
-    switch (e.matchType) {
-      case 'add': this.add(e.data);
-        break;
-      case 'remove': this.remove(e.data.sid);
-        break;
-      case 'change': this.add(e.data);
-        break;
-      default: console.log('Wrong Eventtype');
+    try {
+      if (e) {
+        switch (e.matchType) {
+          case 'add': this.add(e.data);
+            break;
+          case 'remove': this.remove(e.data);
+            break;
+          case 'change': this.add(e.data);
+            break;
+          case 'move': this.add(e.data);
+            break;
+          default: console.log('Wrong Eventtype');
+        }
+      } else {
+        console.log(e);
+      }
+    } catch (err) {
+      this.errorMsg = err.message;
+      console.log(err);
+      this.subscription.unsubscribe();
+      this.serverData = new Map();
+      this.reloadList();
+      this.setDetails();
     }
   }
 
@@ -184,10 +199,10 @@ export class OverviewListClient {
 
   /**
    * Deletes Serverdata
-   * @param {*} sid - ID of the ServerData which should be deleted
+   * @param {*} data - Dataset which shall be removed
    */
-  remove(sid) {
-    this.serverData.delete(sid);
+  remove(data) {
+    this.serverData.delete(data.sid);
     this.reloadList();
   }
   /**
@@ -264,5 +279,11 @@ export class OverviewListClient {
       sql = sql + ' OFFSET '+this.page*this.limit;
     }
     return sql;
+  }
+  /**
+   * saves the Data Measurements
+   */
+  save() {
+    this.Dbinterface.saveMeasurements();
   }
 }

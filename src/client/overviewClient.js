@@ -324,6 +324,8 @@ export class OverviewClient {
         break;
       case 'change': this.add(e.data);
         break;
+      case 'move': this.add(e.data);
+        break;
       default: console.log('Wrong Eventtype');
     }
   }
@@ -460,5 +462,11 @@ export class OverviewClient {
       sql = sql + '\xa0\xa0AND CPU < '+this.maxCpu+'<br>';
     }
     return sql;
+  }
+  /**
+   * saves the Data Measurements
+   */
+  save() {
+    this.Dbinterface.saveMeasurements();
   }
 }

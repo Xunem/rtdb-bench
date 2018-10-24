@@ -15,6 +15,7 @@ export class Producer {
         PROV_FIREBASE, instances.fb, INSERT, {});
     this.baqendClient = new Dbinterface(
         PROV_BAQEND, instances.ba, INSERT, {});
+    this.writeLog = [];
     this.insertRate = insertRate;
     this.servers = [];
     this.serverCount;
@@ -105,12 +106,9 @@ export class Producer {
       newData.ts = Date.now();
       newData.live = true;
       this.servers[this.counter] = newData;
-      if (!this.initial) {
-        this.firebaseClient.updateData(oldData);
-        // this.baqendClient.updateData(oldData);
-      }
       this.firebaseClient.saveData(newData);
       this.baqendClient.saveData(newData);
+      this.writeLog.push(newData);
       if (this.counter == this.serverCount-1) {
         this.initial = false;
       }
@@ -136,5 +134,26 @@ export class Producer {
     this.servers = [];
     this.counter = 0;
     this.initial = true;
+  }
+  /**
+   * Saves the writelog data
+   */
+  saveMeasurements() {
+    this.exportToJsonFile(this.writeLog);
+  }
+
+  /**
+   * Exports Logdata to downloadable JSON
+   * @param {*} jsonData
+   */
+  exportToJsonFile(jsonData) {
+    let dataStr = JSON.stringify(jsonData);
+    let dataUri = 'data:application/json;charset=utf-8,'
+        + encodeURIComponent(dataStr);
+    let exportFileDefaultName = 'DataWriteLog.json';
+    let linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
   }
 }

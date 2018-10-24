@@ -49,7 +49,6 @@ export class RoomClient {
           this.latency.innerHTML = '&Oslash; '+Math.round(value)+' ms';
         });
         this.subscribe(this.initial);
-        this.initial = false;
       } else {
         this.subscription.unsubscribe();
         this.serverData = new Map();
@@ -282,12 +281,17 @@ export class RoomClient {
    * @param {Event} e - The Event which should be handled
    */
   handleEvent(e) {
+    if (this.provider === PROV_FIREBASE) {
+      console.log(e);
+    }
     switch (e.matchType) {
       case 'add': this.add(e.data);
         break;
       case 'remove': this.remove(e.data.sid);
         break;
       case 'change': this.add(e.data);
+        break;
+      case 'move': this.add(e.data);
         break;
       default: console.log('Wrong Eventtype');
     }
@@ -348,6 +352,7 @@ export class RoomClient {
   subscribe(initial) {
     if (initial) {
       this.subQuery = this.Dbinterface.doQuery();
+      this.initial = false;
     } else {
       this.subQuery = this.Dbinterface.updateQuery({
         room: this.room,
@@ -366,5 +371,11 @@ export class RoomClient {
           this.subscribe(false);
         },
         () => console.log('onCompleted'));
+  }
+  /**
+   * saves the Data Measurements
+   */
+  save() {
+    this.Dbinterface.saveMeasurements();
   }
 }

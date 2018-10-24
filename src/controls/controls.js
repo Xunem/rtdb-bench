@@ -3,6 +3,7 @@ export const INSERT_RATE = 1;
 export const ROOMS = 2;
 export const RACKS = 4;
 export const UNITS = 5;
+export const SERVERCOUNT = ROOMS*RACKS*UNITS;
 export const DEFAULT_ROOM = 1;
 export const MIN_TEMP = 25;
 export const MAX_TEMP = 90;
