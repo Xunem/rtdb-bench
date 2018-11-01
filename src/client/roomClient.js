@@ -3,7 +3,9 @@ import {Dbinterface, PROV_BAQEND, PROV_FIREBASE, QUERY_SERVERROOM}
 import {MAX_TEMP, MIN_TEMP,
   MAX_CPU, MIN_CPU} from '../controls/controls.js';
 
-/** */
+/**
+ * Client to display on overview of a given Serverroom
+ */
 export class RoomClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
@@ -326,6 +328,7 @@ export class RoomClient {
     document.getElementById('room_sql').innerHTML = this.getSQLString();
   }
   /**
+   * generates a SQL-Representation of the current query
    * @return {string} sql
    */
   getSQLString() {
@@ -334,6 +337,7 @@ export class RoomClient {
     return sql;
   }
   /**
+   * returns the Information for a given server
    * @param {*} serverid
    * @return {Object} serverdata
    */
@@ -347,6 +351,7 @@ export class RoomClient {
     return '';
   }
   /**
+   * handles the subscription process
    * @param {boolean} initial - indicates if first subscription or update
    */
   subscribe(initial) {

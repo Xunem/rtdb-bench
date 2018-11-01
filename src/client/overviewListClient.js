@@ -21,7 +21,7 @@ export class OverviewListClient {
     this.minCpu = MIN_CPU;
     this.maxCpu = MAX_CPU;
     this.page = 0;
-    this.limit = 12;
+    this.limit = 10;
     this.serverData = new Map();
     this.Dbinterface = new Dbinterface(provider, dbinstance, QUERY_HOTTEST, {
       limit: this.limit,
@@ -39,19 +39,14 @@ export class OverviewListClient {
       this.left = document.getElementById('ovl_ba_left');
       this.right = document.getElementById('ovl_ba_right');
       this.overlay = document.getElementById('overlay_ba');
-      this.latency = document.getElementById('latency_ovl_ba');
     } else if (this.provider == PROV_FIREBASE) {
       this.list = document.getElementById('ovl_fb');
       this.left = document.getElementById('ovl_fb_left');
       this.right = document.getElementById('ovl_fb_right');
       this.overlay = document.getElementById('overlay_fb');
-      this.latency = document.getElementById('latency_ovl_fb');
     }
 
     // Subscription for initial Query
-    this.Dbinterface.getLatency().subscribe((value) => {
-      this.latency.innerHTML = '&Oslash; '+Math.round(value)+' ms';
-    });
     this.setSubscription();
 
     this.controls.getListOffset().subscribe((value) => {
@@ -107,16 +102,6 @@ export class OverviewListClient {
     }
     if (this.serverData.size > 0) {
       this.overlay.style.display = 'none';
-      if (this.serverData.size == this.limit) {
-        this.right.disabled = false;
-      } else {
-        this.right.disabled = true;
-      }
-      if (this.page > 0) {
-        this.left.disabled = false;
-      } else {
-        this.left.disabled = true;
-      }
       let dataArray = Array.from(this.serverData, ([key, value]) => value);
       dataArray.sort(function(a, b) {
         return b.temp - a.temp;

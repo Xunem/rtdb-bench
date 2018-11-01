@@ -3,7 +3,9 @@ import {Dbinterface, PROV_BAQEND, PROV_FIREBASE,
   from '../db-interface/dbinterface.js';
 import {MIN_TEMP, MAX_TEMP, MIN_CPU, MAX_CPU} from '../controls/controls.js';
 
-/** */
+/**
+ * The OverviewClient provides a visual representation of the Serverlandscape
+ */
 export class OverviewClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
@@ -33,7 +35,9 @@ export class OverviewClient {
     this.initial = true;
     this.hotMode = true;
   };
-  /** */
+  /**
+   * initialises the OverviewClient
+   */
   init() {
     // Initialising DOM-Elements
     if (this.provider == PROV_BAQEND) {
@@ -200,7 +204,9 @@ export class OverviewClient {
     return this.ctx.canvas.height -
         (this.offset + Math.floor(relValue*pxRange));
   }
-  /** */
+  /**
+   * updates the canvas with new data
+   */
   redraw() {
     // Clear the canvas
     this.ctx.clearRect(0, 0,
@@ -350,7 +356,7 @@ export class OverviewClient {
     this.redraw();
   }
   /**
-   *
+   * calculates the currently hottest server
    */
   calcHottest() {
     let dataArray = Array.from(this.serverData, ([key, value]) => value);
@@ -438,28 +444,29 @@ export class OverviewClient {
     }
   }
   /**
-   *
+   * Updates the SQL Presentation
    */
   setDetails() {
     document.getElementById('overview_sql').innerHTML = this.getSQLString();
   }
   /**
+   * generates a SQL Query for the current options
    * @return {string} sql
    */
   getSQLString() {
     let sql = 'SELECT * FROM ServerState<br>';
 
     if (this.minTemp != MIN_TEMP) {
-      sql = sql + '\xa0\xa0AND Temperature > '+this.minTemp+'<br>';
+      sql = sql + '\xa0\xa0AND Temperature >= '+this.minTemp+'<br>';
     }
     if (this.maxTemp != MAX_TEMP) {
-      sql = sql + '\xa0\xa0AND Temperature < '+this.maxTemp+'<br>';
+      sql = sql + '\xa0\xa0AND Temperature <= '+this.maxTemp+'<br>';
     }
     if (this.minCpu != MIN_CPU) {
-      sql = sql + '\xa0\xa0AND CPU > '+this.minCpu+'<br>';
+      sql = sql + '\xa0\xa0AND CPU >= '+this.minCpu+'<br>';
     }
     if (this.maxCpu != MAX_CPU) {
-      sql = sql + '\xa0\xa0AND CPU < '+this.maxCpu+'<br>';
+      sql = sql + '\xa0\xa0AND CPU <= '+this.maxCpu+'<br>';
     }
     return sql;
   }

@@ -42,13 +42,7 @@ export class Dbinterface {
     this.dbprov.saveData(data);
   }
   /**
-   * Delegates update procedure to chosen Database Provider
-   * @param {String} id - Id
-   */
-  updateData(id) {
-    this.dbprov.updateData(id);
-  }
-  /**
+   * executes the given query
    * @return {s}
    */
   doQuery() {
@@ -69,6 +63,7 @@ export class Dbinterface {
     this.dbprov.deleteAll();
   }
   /**
+   * Returns Observable with Latency Measurements
    * @return {BehaviorSubject} latency
    */
   getLatency() {
@@ -101,7 +96,9 @@ export class Dbinterface {
     this.dbprov.saveMeasurements();
   }
 }
-/** */
+/**
+ * Implementation of the DbInterface for Firebase
+ */
 class FirebaseClient {
   /**
    * @param {*} dbinstance - Database-connector
@@ -115,13 +112,16 @@ class FirebaseClient {
     this.log = [];
     this.queryType = queryType;
     this.details = details;
+    this.indexList = [];
     this.added = new ReplaySubject(SERVERCOUNT);
     this.removed = new ReplaySubject(SERVERCOUNT);
     this.changed = new ReplaySubject(SERVERCOUNT);
     this.moved = new ReplaySubject(SERVERCOUNT);
     this.setQuery();
   }
-  /** */
+  /**
+   * sets the Query according to the selected Querytype and options
+   */
   setQuery() {
     switch (this.queryType) {
       case QUERY_HOTTEST:
@@ -177,10 +177,19 @@ class FirebaseClient {
     }
   }
   /**
+   * Returns the Observable for the selected Query
    * @return {Observable} Subscription
    */
   doQuery() {
-    this.addQuery = this.query.on('child_added', (data) => {
+    this.addQuery = this.query.on('child_added', (data, key) => {
+      let index = '';
+      if (key !== '') {
+        if (this.queryType === QUERY_HOTTEST) {
+          index = this.getIndex(key, data.val().sid);
+        } else if (this.queryType === QUERY_SERVER) {
+          index = this.getIndex(key, data.val().mid);
+        }
+      }
       if (this.initialDataLoaded) {
         this.latency.next(Date.now() - data.val().ts);
       }
@@ -188,6 +197,8 @@ class FirebaseClient {
         query: this.queryType,
         options: this.details,
         matchType: 'add',
+        index: index,
+        prevKey: key,
         initial: this.initialDataLoaded,
         data: data.val(),
         ts: Date.now(),
@@ -195,8 +206,16 @@ class FirebaseClient {
       this.added.next({matchType: 'add',
         data: data.val(),
       });
+    }, (error) => {
+      console.error(error);
     });
+
     this.removeQuery = this.query.on('child_removed', (data) => {
+      if (this.queryType === QUERY_HOTTEST) {
+        this.deleteKey(data.val().mid);
+      } else if (this.queryType === QUERY_SERVER) {
+        this.deleteKey(data.val().mid);
+      }
       this.log.push({
         query: this.queryType,
         options: this.details,
@@ -208,8 +227,19 @@ class FirebaseClient {
       this.removed.next({matchType: 'remove',
         data: data.val(),
       });
+    }, (error) => {
+      console.error(error);
     });
-    this.changeQuery = this.query.on('child_changed', (data) => {
+
+    this.changeQuery = this.query.on('child_changed', (data, key) => {
+      let index = '';
+      if (key !== '') {
+        if (this.queryType === QUERY_HOTTEST) {
+          index = this.getIndex(key, data.val().sid);
+        } else if (this.queryType === QUERY_SERVER) {
+          index = this.getIndex(key, data.val().id);
+        }
+      }
       if (this.initialDataLoaded) {
         this.latency.next(Date.now() - data.val().ts);
       }
@@ -217,6 +247,8 @@ class FirebaseClient {
         query: this.queryType,
         options: this.details,
         matchType: 'change',
+        index: index,
+        prevKey: key,
         initial: this.initialDataLoaded,
         data: data.val(),
         ts: Date.now(),
@@ -224,8 +256,19 @@ class FirebaseClient {
       this.changed.next({matchType: 'change',
         data: data.val(),
       });
+    }, (error) => {
+      console.error(error);
     });
-    this.moveQuery = this.query.on('child_moved', (data) => {
+
+    this.moveQuery = this.query.on('child_moved', (data, key) => {
+      let index = '';
+      if (key !== '') {
+        if (this.queryType === QUERY_HOTTEST) {
+          index = this.getIndex(key, data.val().sid);
+        } else if (this.queryType === QUERY_SERVER) {
+          index = this.getIndex(key, data.val().mid);
+        }
+      }
       if (this.initialDataLoaded) {
         this.latency.next(Date.now() - data.val().ts);
       }
@@ -233,16 +276,23 @@ class FirebaseClient {
         query: this.queryType,
         options: this.details,
         matchType: 'move',
+        index: index,
+        prevKey: key,
         initial: this.initialDataLoaded,
         data: data.val(),
         ts: Date.now(),
       });
       this.moved.next({matchType: 'move',
         data: data.val(),
+      }, (error) => {
+        console.error(error);
       });
     });
+
     this.query.once('value', (snapshot) => {
       this.initialDataLoaded = true;
+    }, (error) => {
+      console.error(error);
     });
     this.subscription = merge(this.added, this.removed,
         this.changed, this.moved);
@@ -296,11 +346,6 @@ class FirebaseClient {
     });
   }
   /**
-   * @param {Object} data
-   */
-  updateData(data) {
-  }
-  /**
    * Deletes all Serverdata to reset the Application
    */
   deleteAll() {
@@ -344,6 +389,62 @@ class FirebaseClient {
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
   }
+  /**
+   * Provides the absolute Index for a ordered Element
+   * @param {*} key key of the previous Element
+   * @param {*} newKey key of the new Element
+   * @return {Number} index of the Element
+   */
+  getIndex(key, newKey) {
+    if (key === null) {
+      let ind = '';
+      for (let i = 0; i<this.indexList.length; i++) {
+        if (this.indexList[i] === newKey) {
+          ind = i;
+        }
+      }
+      if (ind !== '') {
+        this.indexList.splice(ind, 1);
+      }
+      this.indexList.splice(this.indexList.length, 0, newKey);
+      return this.indexList.length-1;
+    } else {
+      let oldValue = '';
+      for (let i = 0; i<this.indexList.length; i++) {
+        if (this.indexList[i] === newKey) {
+          oldValue = i;
+        }
+      }
+      if (oldValue !== '') {
+        this.indexList.splice(oldValue, 1);
+      }
+      let prevIndex = '';
+      for (let i = 0; i<this.indexList.length; i++) {
+        if (this.indexList[i] === key) {
+          prevIndex = i;
+        }
+      }
+      if (prevIndex !== '') {
+        this.indexList.splice(prevIndex, 0, newKey);
+      }
+      return prevIndex;
+    }
+  }
+  /**
+   * removes the Key from the internal Presentation of ordered Elements
+   * @param {*} key
+   */
+  deleteKey(key) {
+    let ind = '';
+    for (let i = 0; i<this.indexList.length; i++) {
+      if (this.indexList[i] === key) {
+        ind = i;
+      }
+    }
+    if (ind !== '') {
+      this.indexList.splice(ind, 1);
+    }
+  }
 }
 /**
  * Database Interface class for Baqend
@@ -371,8 +472,9 @@ class BaqendClient {
       case QUERY_HOTTEST:
         this.query = this.ba_inst.ServerState.find();
         if (this.details.range) {
-          this.query = this.query.between('cpu',
-              Math.floor(this.details.minCpu), Math.floor(this.details.maxCpu));
+          this.query = this.query
+              .gt('cpu', Math.floor(this.details.minCpu))
+              .lt('cpu', Math.floor(this.details.maxCpu));
         }
         this.query = this.query.descending('temp');
         if (this.details.offset > 0) {
@@ -425,6 +527,7 @@ class BaqendClient {
     }
   }
   /**
+   * returns the Observable for the selected Query
    * @return {Observable} Subscription
    */
   doQuery() {
@@ -439,6 +542,7 @@ class BaqendClient {
               options: this.details,
               matchType: 'add',
               initial: event.initial,
+              index: event.index,
               data: event.data,
               ts: Date.now(),
             });
@@ -453,6 +557,7 @@ class BaqendClient {
               options: this.details,
               matchType: 'remove',
               initial: event.initial,
+              index: event.index,
               data: event.data,
               ts: Date.now(),
             });
@@ -470,6 +575,7 @@ class BaqendClient {
               options: this.details,
               matchType: 'change',
               initial: event.initial,
+              index: event.index,
               data: event.data,
               ts: Date.now(),
             });
@@ -487,6 +593,7 @@ class BaqendClient {
               options: this.details,
               matchType: 'move',
               initial: event.initial,
+              index: event.index,
               data: event.data,
               ts: Date.now(),
             });
@@ -500,6 +607,7 @@ class BaqendClient {
     return this.subscription;
   }
   /**
+   * updates the query options
    * @param {Object} details - Object with further information
    * like min-x, min-y or limit
    * @return {Observable} The new Subscription
@@ -510,6 +618,7 @@ class BaqendClient {
     return this.doQuery();
   }
   /**
+   * saves the delivered data
    * @param {Object} data - Sensordata which should be saved
    */
   saveData(data) {
@@ -527,12 +636,6 @@ class BaqendClient {
     };
     let serverData = new this.ba_inst.ServerData(saveData);
     serverData.save();
-  }
-  /**
-   * @param {Object} data
-   */
-  updateData(data) {
-
   }
   /**
    * Deletes all Serverdata to reset the Application
@@ -560,6 +663,7 @@ class BaqendClient {
     }
   }
   /**
+   * Returns an Observable, which updates the measured Latency
    * @return {BehaviorSubject} latency
    */
   getLatency() {

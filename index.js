@@ -9,11 +9,9 @@ import {Controls, MIN_TEMP, MAX_TEMP,
   MIN_CPU, MAX_CPU, INSERT_RATE} from './src/controls/controls.js';
 import 'nouislider';
 
-let ts = Date.now();
 let room = 1;
 
 initConnections.then((instances) => {
-  console.log('ready '+ (Date.now()-ts));
   const producer = new Producer(instances, INSERT_RATE);
   const firebaseClient = instances.fb;
   const baqendClient = instances.ba;
@@ -93,7 +91,7 @@ initConnections.then((instances) => {
     controls.getMinTemp().next(minTemp.value);
   });
   maxTemp.addEventListener('change', () => {
-    controls.getMaxTemp().next(maxCpu.value);
+    controls.getMaxTemp().next(maxTemp.value);
   });
   noUiSlider.create(sliderCpu, {
     start: [MIN_CPU, MAX_CPU],

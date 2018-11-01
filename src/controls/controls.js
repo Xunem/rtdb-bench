@@ -10,7 +10,7 @@ export const MAX_TEMP = 90;
 export const MIN_CPU = 0;
 export const MAX_CPU = 100;
 /**
- *
+ * Stores the relevant Information which should be shared throughout clients
  */
 export class Controls {
   /**
@@ -22,7 +22,6 @@ export class Controls {
     this.minCpu = new BehaviorSubject();
     this.maxCpu = new BehaviorSubject();
     this.hottestServer = new BehaviorSubject();
-    this.hottestServer.next(true);
     this.hottestServerId = new BehaviorSubject();
     this.roomNumber = new BehaviorSubject();
     this.roomNumber.next(1);
@@ -109,7 +108,7 @@ export class Controls {
   }
   /**
    *
-   * @param {string} id
+   * @param {string} id sets the ServerId if not already equal
    */
   setIfNotCurrent(id) {
     if (id !== this.current) {

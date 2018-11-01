@@ -1,7 +1,9 @@
 import {Dbinterface, PROV_BAQEND, PROV_FIREBASE, QUERY_SERVER}
   from '../db-interface/dbinterface.js';
 
-/** */
+/**
+ * Client to display Detailinformation for a given Server
+ */
 export class ServerClient {
   /**
    * @param {Controls} controls - Controls-Object for sharing settings
@@ -22,7 +24,9 @@ export class ServerClient {
     this.serverData = new Map();
     this.temp = {};
   };
-  /** */
+  /**
+   * initialises the ServerClient
+   */
   init() {
     if (this.provider == PROV_BAQEND) {
       this.ctx = document.getElementById('srv_ba_cvs').getContext('2d');
@@ -72,7 +76,9 @@ export class ServerClient {
     this.setDetails();
     this.redraw();
   }
-  /** */
+  /**
+   * Updates the HTML Canvas
+   */
   redraw() {
     this.ctx.clearRect(0, 0,
         this.ctx.canvas.width, this.ctx.canvas.height); // Clears the canvas
@@ -207,7 +213,7 @@ export class ServerClient {
     }
   }
   /**
-   *
+   * Calculates the Y-Postition of a value
    * @param {Number} value
    * @return {Number}
    */
@@ -260,7 +266,7 @@ export class ServerClient {
   }
 
   /**
-   *
+   * Updates the Detailsection
    */
   setDetails() {
     let current = document.getElementById('server_details');
@@ -273,24 +279,10 @@ export class ServerClient {
 
     let currentSql = document.getElementById('server_sql');
     currentSql.innerHTML = this.getSQLString();
-
-    if (this.left) {
-      if (this.serverData.size == this.limit) {
-        this.left.disabled = false;
-      } else {
-        this.left.disabled = true;
-      }
-    }
-    if (this.right) {
-      if (this.page > 0) {
-        this.right.disabled = false;
-      } else {
-        this.right.disabled = true;
-      }
-    }
   }
 
   /**
+   * generates a SQL Representation of the current query
    * @return {string} sql
    */
   getSQLString() {
@@ -305,7 +297,7 @@ export class ServerClient {
   }
 
   /**
-   *
+   * Updates the filter options
    */
   updateFilter() {
     try {
